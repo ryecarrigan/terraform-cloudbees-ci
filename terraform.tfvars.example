@@ -1,0 +1,14 @@
+# Name for your EKS cluster
+cluster_name = ""
+
+# EC2 key pair name for connecting to the bastion and nodes
+key_name = ""
+
+# Tag key to identify the resource owner
+owner_key = ""
+
+# Tag value to identify the resource owner
+owner_value = ""
+
+# CIDR block that will be allowed to SSH into the bastion
+ssh_cidr = ""
