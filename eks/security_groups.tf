@@ -3,8 +3,7 @@ resource "aws_security_group" "bastion" {
   vpc_id      = var.vpc_id
 
   ingress {
-    cidr_blocks = [
-      var.ssh_cidr]
+    cidr_blocks = [var.ssh_cidr]
     from_port   = 22
     protocol    = "tcp"
     to_port     = 22
@@ -41,15 +40,14 @@ resource "aws_security_group" "node_security_group" {
     create_before_destroy = true
   }
 
-  tags = map(
-    local.cluster_name_tag, "owned",
-    var.owner_key, var.owner_value
-  )
+  tags = {
+    "${local.cluster_name_tag}" = "owned"
+    "${var.owner_key}"          = var.owner_value
+  }
 }
 
 resource "aws_security_group_rule" "bastion" {
-  cidr_blocks       = [
-    var.vpc_cidr]
+  cidr_blocks       = [var.vpc_cidr]
   from_port         = 22
   protocol          = "tcp"
   security_group_id = aws_security_group.node_security_group.id

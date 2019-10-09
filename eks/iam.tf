@@ -44,8 +44,8 @@ resource "aws_iam_role" "instance_role" {
 
 data "aws_iam_policy_document" "node_instance_role" {
   statement {
-    actions   = ["sts:AssumeRole"]
-    effect    = "Allow"
+    actions = ["sts:AssumeRole"]
+    effect  = "Allow"
 
     principals {
       identifiers = ["ec2.amazonaws.com"]

@@ -56,7 +56,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
   vpc_id                  = local.vpc_id
 
-  tags                            = {
+  tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "kubernetes.io/role/elb"                    = "1"
     "${var.owner_key}"                          = var.owner_value
@@ -70,11 +70,11 @@ resource "aws_subnet" "private" {
   cidr_block              = cidrsubnet(local.vpc_cidr_block, 8, 200 + count.index)
   map_public_ip_on_launch = false
   vpc_id                  = local.vpc_id
-  tags                    = map(
-    local.cluster_name_tag, "shared",
-    "kubernetes.io/role/internal-elb", 1,
-    var.owner_key, var.owner_value
-  )
+  tags = {
+    "${local.cluster_name_tag}"       = "shared",
+    "kubernetes.io/role/internal-elb" = 1,
+    "${var.owner_key}"                = var.owner_value
+  }
 }
 
 resource "aws_route_table" "private" {

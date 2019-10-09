@@ -63,7 +63,9 @@ resource "aws_instance" "bastion" {
   subnet_id              = var.public_subnet_ids[0]
   user_data              = local.bastion_user_data
   vpc_security_group_ids = [
-    aws_security_group.bastion.id, aws_security_group.cluster_control_plane.id]
+    aws_security_group.bastion.id,
+    aws_security_group.cluster_control_plane.id,
+  ]
 
   tags = {
     Name               = "${var.cluster_name}-bastion"
