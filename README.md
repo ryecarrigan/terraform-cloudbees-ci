@@ -7,7 +7,6 @@ This plan uses default AWS credentials.
 2. Edit `terraform.tfvars` and provide your desired values.
 3. Run `terraform plan` and verify the output.
 4. Run `terraform apply` to create resources.
-5. Run `./aws_auth.sh` to set up kubeconfig and allow IAM auth to the new cluster.
 
 Run `kubectl get nodes -w` to verify that nodes are now connecting.
 

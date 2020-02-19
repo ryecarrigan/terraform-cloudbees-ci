@@ -1,5 +1,5 @@
 module "eks" {
-  providers = { aws = "aws" }
+  providers = { aws = "aws", kubernetes = "kubernetes" }
   source    = "./eks"
 
   cluster_name       = var.cluster_name
@@ -24,12 +24,20 @@ module "vpc" {
   owner_value  = var.owner_value
 }
 
-module "mysql" {
-  providers = { helm = "helm" }
-  source    = "./mysql"
+//module "mysql" {
+//  providers = { helm = "helm" }
+//  source    = "./mysql"
+//
+//  cluster_id     = module.eks.eks_cluster_id
+//  mysql_database = var.mysql_database
+//  mysql_password = var.mysql_password
+//  mysql_user     = var.mysql_user
+//}
 
-  cluster_id     = module.eks.eks_cluster_id
-  mysql_database = var.mysql_database
-  mysql_password = var.mysql_password
-  mysql_user     = var.mysql_user
-}
+//module "efs-provisioner" {
+//  providers = { aws = "aws", kubernetes = "kubernetes" }
+//  source    = "./efs-provisioner"
+//
+//  domain_name    = var.domain_name
+//  file_system_id = module.eks.efs_id
+//}

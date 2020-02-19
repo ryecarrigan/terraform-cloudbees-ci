@@ -2,4 +2,3 @@
 .terraform
 *.tfstate*
 *.tfvars
-aws-auth.yaml
