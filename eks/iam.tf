@@ -77,10 +77,11 @@ resource "kubernetes_config_map" "iam-auth" {
 
   data = {
     mapRoles = <<EOF
-      rolearn  = ${aws_iam_role.instance_role.arn}
-      username = "system:node:{{EC2PrivateDNSName}}"
-      groups   = ["system:bootstrappers", "system:nodes"]
-    }
+- rolearn: ${aws_iam_role.instance_role.arn}
+  username: system:node:{{EC2PrivateDNSName}}
+  groups:
+    - system:bootstrappers
+    - system:nodes
     EOF
   }
 }
