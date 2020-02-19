@@ -8,6 +8,7 @@ This plan uses default AWS credentials.
 3. Run `terraform plan` and verify the output.
 4. Run `terraform apply` to create resources.
 5. Run `./aws_auth.sh` to set up kubeconfig and allow IAM auth to the new cluster.
-6. Run `kubectl get nodes` to verify that nodes are now connecting
+
+Run `kubectl get nodes -w` to verify that nodes are now connecting.
 
 Your EKS cluster is now ready to install CloudBees Core.
