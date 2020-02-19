@@ -9,7 +9,6 @@ if [[ -z ${INSTANCE_ROLE_ARN} ]]; then
   exit 1
 fi
 
-aws eks --region us-east-1 --profile cloudbees-ps update-kubeconfig --name "${CLUSTER_NAME}"
 cat <<EOF > aws-auth.yaml
 apiVersion: v1
 kind: ConfigMap

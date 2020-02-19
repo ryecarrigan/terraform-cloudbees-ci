@@ -23,3 +23,13 @@ module "vpc" {
   owner_key    = var.owner_key
   owner_value  = var.owner_value
 }
+
+module "mysql" {
+  providers = { helm = "helm" }
+  source    = "./mysql"
+
+  cluster_id     = module.eks.eks_cluster_id
+  mysql_database = var.mysql_database
+  mysql_password = var.mysql_password
+  mysql_user     = var.mysql_user
+}

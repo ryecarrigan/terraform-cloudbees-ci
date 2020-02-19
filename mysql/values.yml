@@ -1,0 +1,28 @@
+image: "mysql"
+imageTag: "5.7.28"
+
+mysqlUser: "cbflow"
+mysqlPassword: "flow-password"
+mysqlDatabase: "cbflow"
+
+persistence:
+  enabled: true
+  accessMode: "ReadWriteOnce"
+  size: "8Gi"
+  annotations: {}
+
+configurationFiles:
+  my.cnf: |-
+   [mysqld]
+   init_connect='SET collation_connection = utf8_unicode_ci'
+   init_connect='SET NAMES utf8'
+   character-set-server=utf8
+   collation-server=utf8_unicode_ci
+   skip-character-set-client-handshake
+   [client]
+   default-character-set=utf8
+
+initializationFiles:
+  privileges.sql: |-
+    GRANT ALL PRIVILEGES ON `cbflow%`.* TO 'cbflow'@'%';
+    FLUSH PRIVILEGES;

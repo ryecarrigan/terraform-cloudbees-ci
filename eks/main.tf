@@ -10,6 +10,10 @@ resource "aws_eks_cluster" "cluster" {
     security_group_ids      = [aws_security_group.cluster_control_plane.id]
     subnet_ids              = var.private_subnet_ids
   }
+
+  provisioner "local-exec" {
+    command = "aws eks --region ${data.aws_region.current.name} update-kubeconfig --name ${var.cluster_name}"
+  }
 }
 
 resource "aws_launch_configuration" "node_launch_config" {

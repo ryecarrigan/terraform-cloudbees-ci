@@ -12,3 +12,8 @@ owner_value = ""
 
 # CIDR block that will be allowed to SSH into the bastion
 ssh_cidr = ""
+
+# Values for the MySQL database in K8S
+mysql_database = ""
+mysql_password = ""
+mysql_user     = ""

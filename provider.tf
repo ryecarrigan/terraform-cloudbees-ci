@@ -1,3 +1,7 @@
 provider "aws" {
 
 }
+
+provider "helm" {
+
+}
