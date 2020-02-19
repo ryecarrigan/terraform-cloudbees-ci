@@ -67,7 +67,7 @@ variable "bootstrap_arguments" {
 }
 
 variable "node_asg_desired" {
-  default = 6
+  default = 4
 }
 
 variable "node_asg_max_size" {
@@ -75,7 +75,7 @@ variable "node_asg_max_size" {
 }
 
 variable "node_asg_min_size" {
-  default = 2
+  default = 0
 }
 
 variable "node_group_name" {
@@ -83,11 +83,11 @@ variable "node_group_name" {
 }
 
 variable "node_instance_type" {
-  default = "t3.medium"
+  default = "m5.large"
 }
 
 variable "node_volume_size" {
-  default = 20
+  default = 50
 }
 
 variable "owner_key" {

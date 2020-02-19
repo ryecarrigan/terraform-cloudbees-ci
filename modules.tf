@@ -4,7 +4,9 @@ module "eks" {
 
   cluster_name       = var.cluster_name
   key_name           = var.key_name
-  node_asg_desired   = 3
+  node_asg_desired   = 4
+  node_asg_max_size  = 8
+  node_instance_type = "m5.xlarge"
   owner_key          = var.owner_key
   owner_value        = var.owner_value
   private_subnet_ids = module.vpc.private_subnet_ids

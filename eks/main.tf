@@ -27,14 +27,33 @@ resource "aws_launch_configuration" "node_launch_config" {
   }
 }
 
+resource "aws_efs_file_system" "persistent" {
+  tags = {
+    "${var.owner_key}" = var.owner_value
+  }
+}
+
+resource "aws_efs_mount_target" "persistent" {
+  count = length(var.private_subnet_ids)
+
+  file_system_id  = aws_efs_file_system.persistent.id
+  security_groups = [aws_security_group.node_security_group.id]
+  subnet_id       = var.private_subnet_ids[count.index]
+}
+
+data "aws_iam_role" "autoscaling" {
+  name = "AWSServiceRoleForAutoScaling"
+}
+
 resource "aws_autoscaling_group" "node_group" {
-  depends_on           = [aws_eks_cluster.cluster]
-  desired_capacity     = var.node_asg_desired
-  launch_configuration = aws_launch_configuration.node_launch_config.id
-  max_size             = var.node_asg_max_size
-  min_size             = var.node_asg_min_size
-  name_prefix          = local.node_group_name
-  vpc_zone_identifier  = var.private_subnet_ids
+  depends_on               = [aws_eks_cluster.cluster]
+  desired_capacity         = var.node_asg_desired
+  launch_configuration     = aws_launch_configuration.node_launch_config.id
+  max_size                 = var.node_asg_max_size
+  min_size                 = var.node_asg_min_size
+  name_prefix              = local.node_group_name
+  service_linked_role_arn  = data.aws_iam_role.autoscaling.arn
+  vpc_zone_identifier      = var.private_subnet_ids
 
   tags = [
     {

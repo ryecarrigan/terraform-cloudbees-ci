@@ -9,8 +9,8 @@ if [[ -z ${INSTANCE_ROLE_ARN} ]]; then
   exit 1
 fi
 
-aws eks --region us-east-1 update-kubeconfig --name "${CLUSTER_NAME}"
-kubectl apply -f - <<EOF
+aws eks --region us-east-1 --profile cloudbees-ps update-kubeconfig --name "${CLUSTER_NAME}"
+cat <<EOF > aws-auth.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -23,4 +23,12 @@ data:
       groups:
         - system:bootstrappers
         - system:nodes
+#    - rolearn: ${INSTANCE_ROLE_WIN}
+#      username: system:node:{{EC2PrivateDNSName}}
+#      groups:
+#        - system:bootstrappers
+#        - system:nodes
+#        - eks:kube-proxy-windows
 EOF
+
+kubectl apply -f aws-auth.yml
