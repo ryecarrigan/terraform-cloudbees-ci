@@ -1,6 +1,9 @@
 # Name for your EKS cluster
 cluster_name = ""
 
+# Host name for the CloudBees Core module
+host_name = ""
+
 # EC2 key pair name for connecting to the bastion and nodes
 key_name = ""
 
@@ -10,10 +13,8 @@ owner_key = ""
 # Tag value to identify the resource owner
 owner_value = ""
 
+# Path to your local PEM key corresponding to the key name used
+private_key_file = ""
+
 # CIDR block that will be allowed to SSH into the bastion
 ssh_cidr = ""
-
-# Values for the MySQL database in K8S
-mysql_database = ""
-mysql_password = ""
-mysql_user     = ""
