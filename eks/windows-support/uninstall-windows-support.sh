@@ -11,8 +11,11 @@ if [[ -z "$CLUSTER_NAME" ]]; then
   exit
 fi
 
-if ! aws eks update-kubeconfig --name "${CLUSTER_NAME}"; then
-  exit
+# Check that AWS CLI is available, then use it to update kubeconfig
+if command -v aws; then
+  if ! aws eks update-kubeconfig --name "${CLUSTER_NAME}"; then exit; fi
+else
+  echo "AWS CLI not found"; exit
 fi
 
 # 4. Determine if your cluster has the required cluster role binding.
@@ -23,7 +26,7 @@ then
 fi
 
 # 3. Delete the VPC admission webhook.
-if [[ -f vpc-admission-webhook.yaml ]]; then
+if [[ -f ./vpc-admission-webhook.yaml ]]; then
   kubectl delete -f vpc-admission-webhook.yaml
   rm vpc-admission-webhook.yaml
 else

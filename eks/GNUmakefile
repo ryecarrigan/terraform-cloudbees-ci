@@ -36,6 +36,14 @@ resources-init roots/cluster_resources/.terraform/terraform.tfstate:
 		terraform init \
 			-backend-config="bucket=$(BUCKET_NAME)"
 
+windows-add:
+	@cd windows-support && \
+		./install-windows-support.sh
+
+windows-remove:
+	@cd windows-support && \
+		./uninstall-windows-support.sh
+
 
 check_defined = \
 		$(strip $(foreach 1,$1, \
