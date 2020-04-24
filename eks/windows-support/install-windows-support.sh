@@ -6,6 +6,15 @@ if [[ -z "$AWS_REGION" ]]; then
   exit
 fi
 
+if [[ -z "$CLUSTER_NAME" ]]; then
+  echo "CLUSTER_NAME must be set"
+  exit
+fi
+
+if ! aws eks update-kubeconfig --name "${CLUSTER_NAME}"; then
+  exit
+fi
+
 # 1. Deploy the VPC resource controller to your cluster.
 kubectl apply \
   -f https://amazon-eks.s3-us-west-2.amazonaws.com/manifests/${AWS_REGION}/vpc-resource-controller/latest/vpc-resource-controller.yaml
