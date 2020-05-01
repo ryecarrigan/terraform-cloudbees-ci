@@ -36,13 +36,25 @@ variable "host_name" {
   default = ""
 }
 
+variable "namespace" {
+  default = "cloudbees"
+}
+
+resource "kubernetes_namespace" "cloudbees" {
+  metadata {
+    name = var.namespace
+  }
+}
+
 module "cloudbees_ci" {
   providers = { helm = "helm", kubernetes = "kubernetes" }
-  source    = "git@github.com:ryecarrigan/terraform-k8s-cloudbees.git?ref=v1.0.0"
+  source    = "git@github.com:ryecarrigan/terraform-k8s-cloudbees.git?ref=v1.1.0"
 
   acm_certificate_arn = var.acm_certificate_arn
+  create_namespace    = false
   host_name           = var.host_name
   hibernation_enabled = true
+  namespace           = var.namespace
 }
 
 module "cluster_autoscaler" {
