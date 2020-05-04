@@ -26,9 +26,11 @@ cluster-init roots/cluster_setup/.terraform/terraform.tfstate:
 .PHONY: resources
 resources: roots/cluster_resources
 	$(call check_defined, BUCKET_NAME, name for the backend state bucket)
+	$(call check_defined, CLUSTER_NAME, name of the EKS cluster)
 	@cd roots/cluster_resources && \
 		terraform $(ACTION) \
-			-var "bucket_name=$(BUCKET_NAME)"
+			-var "bucket_name=$(BUCKET_NAME)" \
+			-var "cluster_name=$(CLUSTER_NAME)"
 
 resources-init roots/cluster_resources/.terraform/terraform.tfstate:
 	$(call check_defined, BUCKET_NAME, name for the backend state bucket)

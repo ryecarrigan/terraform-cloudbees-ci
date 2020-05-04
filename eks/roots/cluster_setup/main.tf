@@ -22,6 +22,10 @@ variable "instance_type" {
   default = "m5a.large"
 }
 
+variable "key_name" {
+  default = ""
+}
+
 variable "ssh_cidr" {
   default = "0.0.0.0/32"
 }
@@ -39,6 +43,7 @@ module "eks_cluster" {
   source    = "git@github.com:ryecarrigan/terraform-eks-cluster.git?ref=v1.2.0"
 
   bastion_count      = 0
+  bastion_key_name   = var.key_name
   cluster_name       = var.cluster_name
   eks_version        = local.eks_version
   extra_tags         = var.extra_tags
@@ -50,7 +55,7 @@ module "eks_cluster" {
 
 module "eks_linux" {
   providers = { aws = "aws" }
-  source    = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v2.0.1"
+  source    = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v2.1.0"
 
   autoscaler_enabled   = true
   cluster_name         = var.cluster_name
@@ -58,6 +63,7 @@ module "eks_linux" {
   extra_tags           = var.extra_tags
   image_id             = data.aws_ami.linux_ami.image_id
   instance_type        = var.instance_type
+  key_name             = var.key_name
   minimum_nodes_per_az = 1
   node_name_prefix     = "${var.cluster_name}-linux"
   security_group_ids   = [module.eks_cluster.node_security_group_id]
@@ -68,7 +74,7 @@ module "eks_linux" {
 # Windows nodes untested since latest update; not guaranteed without issues.
 module "eks_windows" {
   providers = { aws = "aws" }
-  source    = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v2.0.1"
+  source    = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v2.1.0"
 
   autoscaler_enabled   = false
   cluster_name         = var.cluster_name
@@ -122,12 +128,24 @@ data "template_file" "windows_user_data" {
   }
 }
 
-output "cluster_name" {
-  value = module.eks_cluster.cluster_name
-}
-
 output "linux_node_role_arn" {
   value = module.eks_linux.node_role_arn
+}
+
+output "node_security_group_id" {
+  value = module.eks_cluster.node_security_group_id
+}
+
+output "private_subnet_ids" {
+  value = module.vpc.private_subnet_ids
+}
+
+output "public_subnet_ids" {
+  value = module.vpc.public_subnet_ids
+}
+
+output "vpc_id" {
+  value = module.vpc.vpc_id
 }
 
 output "windows_node_role_arn" {

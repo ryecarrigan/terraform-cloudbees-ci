@@ -32,6 +32,7 @@ variable "acm_certificate_arn" {
 }
 
 variable "bucket_name" {}
+variable "cluster_name" {}
 variable "host_name" {
   default = ""
 }
@@ -62,20 +63,20 @@ module "cluster_autoscaler" {
   source    = "git@github.com:ryecarrigan/terraform-eks-autoscaler.git?ref=v1.0.0"
 
   aws_region   = data.aws_region.current.name
-  cluster_name = local.cluster_name
+  cluster_name = var.cluster_name
 }
 
 module "iam_auth" {
   providers = { aws = "aws", kubernetes = "kubernetes" }
   source    = "git@github.com:ryecarrigan/terraform-eks-auth.git?ref=v1.0.1"
 
-  cluster_name           = local.cluster_name
+  cluster_name           = var.cluster_name
   linux_node_role_arns   = [data.terraform_remote_state.eks_cluster.outputs.linux_node_role_arn]
   windows_node_role_arns = [data.terraform_remote_state.eks_cluster.outputs.windows_node_role_arn]
 }
 
 data "aws_eks_cluster" "cluster" {
-  name = local.cluster_name
+  name = var.cluster_name
 }
 
 data "aws_eks_cluster_auth" "auth" {
@@ -103,6 +104,5 @@ output "ingress_hostname" {
 locals {
   cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
-  cluster_name           = data.terraform_remote_state.eks_cluster.outputs.cluster_name
   kubernetes_host        = data.aws_eks_cluster.cluster.endpoint
 }
