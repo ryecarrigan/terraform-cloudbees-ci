@@ -31,8 +31,20 @@ variable "acm_certificate_arn" {
   default = ""
 }
 
+variable "autoscaler_repository" {
+  default = "us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler"
+}
+
+variable "autoscaler_tag" {
+  default = "v1.15.6"
+}
+
 variable "bucket_name" {}
 variable "cluster_name" {}
+variable "hibernation_enabled" {
+  default = true
+}
+
 variable "host_name" {
   default = ""
 }
@@ -41,29 +53,32 @@ variable "namespace" {
   default = "cloudbees"
 }
 
+variable "release_name" {
+  default = "cloudbees-ci"
+}
+
 resource "kubernetes_namespace" "cloudbees" {
   metadata {
     name = var.namespace
   }
 }
 
-module "cloudbees_ci" {
-  providers = { helm = "helm", kubernetes = "kubernetes" }
-  source    = "git@github.com:ryecarrigan/terraform-k8s-cloudbees.git?ref=v1.1.0"
+resource "helm_release" "cloudbees" {
+  depends_on = [kubernetes_namespace.cloudbees]
 
-  acm_certificate_arn = var.acm_certificate_arn
-  create_namespace    = false
-  host_name           = var.host_name
-  hibernation_enabled = true
-  namespace           = var.namespace
+  chart      = "cloudbees/cloudbees-core"
+  name       = var.release_name
+  namespace  = var.namespace
+  repository = data.helm_repository.cloudbees.metadata[0].name
+  values     = [data.template_file.cloudbees_values.rendered, data.template_file.nginx_values.rendered]
 }
 
-module "cluster_autoscaler" {
-  providers = { helm = "helm" }
-  source    = "git@github.com:ryecarrigan/terraform-eks-autoscaler.git?ref=v1.0.0"
-
-  aws_region   = data.aws_region.current.name
-  cluster_name = var.cluster_name
+resource "helm_release" "cluster_autoscaler" {
+  chart     = "stable/cluster-autoscaler"
+  name      = "cluster-autoscaler"
+  namespace = "kube-system"
+  repository = data.helm_repository.stable.metadata[0].name
+  values    = [data.template_file.autoscaler_values.rendered]
 }
 
 module "iam_auth" {
@@ -85,6 +100,50 @@ data "aws_eks_cluster_auth" "auth" {
 
 data "aws_region" "current" {}
 
+data "helm_repository" "cloudbees" {
+  name = "cloudbees"
+  url  = "https://charts.cloudbees.com/public/cloudbees"
+}
+
+data "helm_repository" "stable" {
+  name = "stable"
+  url  = "https://kubernetes-charts.storage.googleapis.com"
+}
+
+data "kubernetes_service" "ingress_controller" {
+  depends_on = [helm_release.cloudbees]
+
+  metadata {
+    namespace = var.namespace
+    name      = "${var.release_name}-nginx-ingress-controller"
+  }
+}
+
+data "template_file" "autoscaler_values" {
+  template = file("${path.module}/autoscaler_values.yaml.tpl")
+  vars = {
+    aws_region       = data.aws_region.current.name
+    cluster_name     = var.cluster_name
+    image_repository = var.autoscaler_repository
+    image_tag        = var.autoscaler_tag
+  }
+}
+
+data "template_file" "cloudbees_values" {
+  template = file("${path.module}/cloudbees_values.yaml.tpl")
+  vars = {
+    hibernation_enabled = var.hibernation_enabled
+    host_name           = var.host_name
+  }
+}
+
+data "template_file" "nginx_values" {
+  template = file("${path.module}/${local.nginx_values_file}")
+  vars = {
+    acm_certificate_arn = var.acm_certificate_arn
+  }
+}
+
 data "terraform_remote_state" "eks_cluster" {
   backend = "s3"
   config = {
@@ -93,16 +152,13 @@ data "terraform_remote_state" "eks_cluster" {
   }
 }
 
-output "host_name" {
-  value = var.host_name
-}
-
 output "ingress_hostname" {
-  value = module.cloudbees_ci.ingress_hostname
+  value = data.kubernetes_service.ingress_controller.load_balancer_ingress[0].hostname
 }
 
 locals {
   cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   kubernetes_host        = data.aws_eks_cluster.cluster.endpoint
+  nginx_values_file      = (var.acm_certificate_arn == "") ? "http_values.yaml.tpl" : "https_values.yaml.tpl"
 }
