@@ -83,7 +83,7 @@ resource "helm_release" "cluster_autoscaler" {
 
 module "iam_auth" {
   providers = { aws = "aws", kubernetes = "kubernetes" }
-  source    = "git@github.com:ryecarrigan/terraform-eks-auth.git?ref=v1.0.1"
+  source    = "git@github.com:ryecarrigan/terraform-eks-iam-auth.git?ref=v1.0.1"
 
   cluster_name           = var.cluster_name
   linux_node_role_arns   = [data.terraform_remote_state.eks_cluster.outputs.linux_node_role_arn]
