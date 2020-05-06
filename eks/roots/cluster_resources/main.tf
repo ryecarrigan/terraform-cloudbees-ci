@@ -1,3 +1,10 @@
+terraform {
+  required_version = ">= 0.12.0"
+  backend "s3" {
+    key = "terraform_cbci/cluster_resources/terraform.tfstate"
+  }
+}
+
 provider "aws" {
   version = "~> 2.58"
 }
@@ -19,12 +26,6 @@ provider "kubernetes" {
   token                  = local.cluster_auth_token
   load_config_file       = false
   version                = "~> 1.11"
-}
-
-terraform {
-  backend "s3" {
-    key = "terraform_cbci/cluster_resources/terraform.tfstate"
-  }
 }
 
 variable "acm_certificate_arn" {
@@ -82,8 +83,8 @@ resource "helm_release" "cluster_autoscaler" {
 }
 
 module "iam_auth" {
-  providers = { aws = "aws", kubernetes = "kubernetes" }
-  source    = "git@github.com:ryecarrigan/terraform-eks-iam-auth.git?ref=v1.0.1"
+  providers = { aws = aws, kubernetes = kubernetes }
+  source    = "git@github.com:ryecarrigan/terraform-eks-iam-auth.git?ref=v1.0.2"
 
   cluster_name           = var.cluster_name
   linux_node_role_arns   = [data.terraform_remote_state.eks_cluster.outputs.linux_node_role_arn]

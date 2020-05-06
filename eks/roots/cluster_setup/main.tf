@@ -1,3 +1,10 @@
+terraform {
+  required_version = ">= 0.12.0"
+  backend "s3" {
+    key = "terraform_cbci/cluster_setup/terraform.tfstate"
+  }
+}
+
 provider "aws" {
   version = "~> 2.58"
 }
@@ -6,16 +13,10 @@ provider "template" {
   version = "~> 2.1"
 }
 
-terraform {
-  backend "s3" {
-    key = "terraform_cbci/cluster_setup/terraform.tfstate"
-  }
-}
-
 variable "cluster_name" {}
 variable "extra_tags" {
   default = {}
-  type    = "map"
+  type    = map(string)
 }
 
 variable "instance_type" {
@@ -31,16 +32,16 @@ variable "ssh_cidr" {
 }
 
 module "vpc" {
-  providers = { aws = "aws" }
-  source    = "git@github.com:ryecarrigan/terraform-eks-vpc.git?ref=v1.1.1"
+  providers = { aws = aws }
+  source    = "git@github.com:ryecarrigan/terraform-eks-vpc.git?ref=v1.1.2"
 
   cluster_name = var.cluster_name
   extra_tags   = var.extra_tags
 }
 
 module "eks_cluster" {
-  providers = { aws = "aws" }
-  source    = "git@github.com:ryecarrigan/terraform-eks-cluster.git?ref=v1.2.0"
+  providers = { aws = aws }
+  source    = "git@github.com:ryecarrigan/terraform-eks-cluster.git?ref=v1.2.1"
 
   bastion_count      = 0
   bastion_key_name   = var.key_name
@@ -54,8 +55,8 @@ module "eks_cluster" {
 }
 
 module "eks_linux" {
-  providers = { aws = "aws" }
-  source    = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v2.1.0"
+  providers = { aws = aws }
+  source    = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v2.1.1"
 
   autoscaler_enabled   = true
   cluster_name         = var.cluster_name
@@ -73,8 +74,8 @@ module "eks_linux" {
 
 # Windows nodes untested since latest update; not guaranteed without issues.
 module "eks_windows" {
-  providers = { aws = "aws" }
-  source    = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v2.1.0"
+  providers = { aws = aws }
+  source    = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v2.1.1"
 
   autoscaler_enabled   = false
   cluster_name         = var.cluster_name
