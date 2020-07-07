@@ -41,45 +41,71 @@ variable "autoscaler_tag" {
 }
 
 variable "bucket_name" {}
+variable "chart_version" {
+  default = "3.15.1"
+}
+
 variable "cluster_name" {}
 variable "hibernation_enabled" {
-  default = true
+  default = false
 }
 
 variable "host_name" {
   default = ""
 }
 
-variable "namespace" {
-  default = "cloudbees"
+variable "cjoc_namespace" {
+  default = "cjoc"
+}
+
+variable "nginx_namespace" {
+  default = "nginx"
 }
 
 variable "release_name" {
   default = "cloudbees-ci"
 }
 
-resource "kubernetes_namespace" "cloudbees" {
+resource "kubernetes_namespace" "cjoc" {
   metadata {
-    name = var.namespace
+    name = var.cjoc_namespace
   }
 }
 
-resource "helm_release" "cloudbees" {
-  depends_on = [kubernetes_namespace.cloudbees]
+resource "kubernetes_namespace" "nginx" {
+  metadata {
+    name = var.nginx_namespace
+  }
+}
+
+resource "helm_release" "cjoc" {
+  depends_on = [kubernetes_namespace.cjoc, helm_release.nginx]
 
   chart      = "cloudbees/cloudbees-core"
   name       = var.release_name
-  namespace  = var.namespace
+  namespace  = var.cjoc_namespace
   repository = data.helm_repository.cloudbees.metadata[0].name
-  values     = [data.template_file.cloudbees_values.rendered, data.template_file.nginx_values.rendered]
+  values     = [data.template_file.cloudbees_values.rendered]
+  version    = var.chart_version
 }
 
 resource "helm_release" "cluster_autoscaler" {
-  chart     = "stable/cluster-autoscaler"
-  name      = "cluster-autoscaler"
-  namespace = "kube-system"
+  chart      = "stable/cluster-autoscaler"
+  name       = "cluster-autoscaler"
+  namespace  = "kube-system"
   repository = data.helm_repository.stable.metadata[0].name
-  values    = [data.template_file.autoscaler_values.rendered]
+  values     = [data.template_file.autoscaler_values.rendered]
+}
+
+resource "helm_release" "nginx" {
+  depends_on = [kubernetes_namespace.nginx]
+
+  chart      = "cloudbees/cloudbees-core"
+  name       = var.release_name
+  namespace  = var.nginx_namespace
+  repository = data.helm_repository.cloudbees.metadata[0].name
+  values     = [file("${path.module}/nginx_values.yaml"), data.template_file.nginx_values.rendered]
+  version    = var.chart_version
 }
 
 module "iam_auth" {
@@ -90,6 +116,29 @@ module "iam_auth" {
   linux_node_role_arns   = [data.terraform_remote_state.eks_cluster.outputs.linux_node_role_arn]
   windows_node_role_arns = [data.terraform_remote_state.eks_cluster.outputs.windows_node_role_arn]
 }
+
+module "namespace_blue" {
+  providers = { helm = helm, kubernetes = kubernetes }
+  source    = "git@github.com:ryecarrigan/terraform-cbci-namespace.git?ref=v1.0.1"
+
+  chart_version    = var.chart_version
+  host_name        = var.host_name
+  master_namespace = local.namespace_blue
+  oc_namespace     = var.cjoc_namespace
+  release_name     = local.namespace_blue
+}
+
+module "namespace_green" {
+  providers = { helm = helm, kubernetes = kubernetes }
+  source    = "git@github.com:ryecarrigan/terraform-cbci-namespace.git?ref=v1.0.1"
+
+  chart_version    = var.chart_version
+  host_name        = var.host_name
+  master_namespace = local.namespace_green
+  oc_namespace     = var.cjoc_namespace
+  release_name     = local.namespace_green
+}
+
 
 data "aws_eks_cluster" "cluster" {
   name = var.cluster_name
@@ -112,10 +161,10 @@ data "helm_repository" "stable" {
 }
 
 data "kubernetes_service" "ingress_controller" {
-  depends_on = [helm_release.cloudbees]
+  depends_on = [helm_release.nginx]
 
   metadata {
-    namespace = var.namespace
+    namespace = var.nginx_namespace
     name      = "${var.release_name}-nginx-ingress-controller"
   }
 }
@@ -135,6 +184,7 @@ data "template_file" "cloudbees_values" {
   vars = {
     hibernation_enabled = var.hibernation_enabled
     host_name           = var.host_name
+    protocol            = local.protocol
   }
 }
 
@@ -161,5 +211,8 @@ locals {
   cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   kubernetes_host        = data.aws_eks_cluster.cluster.endpoint
+  namespace_blue         = "blue"
+  namespace_green        = "green"
   nginx_values_file      = (var.acm_certificate_arn == "") ? "http_values.yaml.tpl" : "https_values.yaml.tpl"
+  protocol               = (var.acm_certificate_arn == "") ? "http" : "https"
 }

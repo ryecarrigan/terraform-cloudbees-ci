@@ -1,7 +1,4 @@
 nginx-ingress:
-  Enabled: true
-  rbac:
-    create: true
   controller:
     ingressClass: "nginx"
     config:

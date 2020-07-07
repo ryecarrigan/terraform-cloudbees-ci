@@ -1,9 +1,6 @@
 # Variable {acm_certificate_arn} is unused in http template
 
 nginx-ingress:
-  Enabled: true
-  rbac:
-    create: true
   controller:
     ingressClass: "nginx"
     config:
