@@ -37,17 +37,17 @@ variable "autoscaler_repository" {
 }
 
 variable "autoscaler_tag" {
-  default = "v1.15.6"
+  default = "v1.17.3"
 }
 
 variable "bucket_name" {}
 variable "chart_version" {
-  default = "3.15.1"
+  default = "3.16.1"
 }
 
 variable "cluster_name" {}
 variable "hibernation_enabled" {
-  default = false
+  default = true
 }
 
 variable "host_name" {
@@ -100,12 +100,12 @@ resource "helm_release" "cluster_autoscaler" {
 resource "helm_release" "nginx" {
   depends_on = [kubernetes_namespace.nginx]
 
-  chart      = "cloudbees/cloudbees-core"
+  chart      = "stable/nginx-ingress"
   name       = var.release_name
   namespace  = var.nginx_namespace
-  repository = data.helm_repository.cloudbees.metadata[0].name
-  values     = [file("${path.module}/nginx_values.yaml"), data.template_file.nginx_values.rendered]
-  version    = var.chart_version
+  repository = data.helm_repository.stable.metadata[0].name
+  values     = [data.template_file.nginx_values.rendered]
+  version    = "1.31.0"
 }
 
 module "iam_auth" {

@@ -20,7 +20,7 @@ variable "extra_tags" {
 }
 
 variable "instance_type" {
-  default = "m5a.large"
+  default = "m5.large"
 }
 
 variable "key_name" {
@@ -154,5 +154,5 @@ output "windows_node_role_arn" {
 }
 
 locals {
-  eks_version = "1.15"
+  eks_version = "1.17"
 }

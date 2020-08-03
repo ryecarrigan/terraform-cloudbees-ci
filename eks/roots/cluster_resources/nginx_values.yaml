@@ -1,7 +1,0 @@
-nginx-ingress:
-  Enabled: true
-  rbac:
-    create: true
-
-OperationsCenter:
-  Enabled: false
