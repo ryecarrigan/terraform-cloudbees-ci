@@ -54,6 +54,10 @@ variable "host_name" {
   default = ""
 }
 
+variable "agent_namespace" {
+  default = "agents"
+}
+
 variable "cjoc_namespace" {
   default = "cjoc"
 }
@@ -119,26 +123,27 @@ module "iam_auth" {
 
 module "namespace_blue" {
   providers = { helm = helm, kubernetes = kubernetes }
-  source    = "git@github.com:ryecarrigan/terraform-cbci-namespace.git?ref=v1.0.1"
+  source    = "git@github.com:ryecarrigan/terraform-cbci-namespace.git?ref=v2.0.0"
 
-  chart_version    = var.chart_version
-  host_name        = var.host_name
-  master_namespace = local.namespace_blue
-  oc_namespace     = var.cjoc_namespace
-  release_name     = local.namespace_blue
+  chart_version         = var.chart_version
+  host_name             = var.host_name
+  master_namespace_name = local.namespace_blue
+  oc_namespace_name     = var.cjoc_namespace
+  release_name          = local.namespace_blue
 }
 
 module "namespace_green" {
   providers = { helm = helm, kubernetes = kubernetes }
-  source    = "git@github.com:ryecarrigan/terraform-cbci-namespace.git?ref=v1.0.1"
+  source    = "git@github.com:ryecarrigan/terraform-cbci-namespace.git?ref=v2.0.0"
 
-  chart_version    = var.chart_version
-  host_name        = var.host_name
-  master_namespace = local.namespace_green
-  oc_namespace     = var.cjoc_namespace
-  release_name     = local.namespace_green
+  agent_namespace_name   = var.agent_namespace
+  chart_version          = var.chart_version
+  create_agent_namespace = true
+  host_name              = var.host_name
+  master_namespace_name  = local.namespace_green
+  oc_namespace_name      = var.cjoc_namespace
+  release_name           = local.namespace_green
 }
-
 
 data "aws_eks_cluster" "cluster" {
   name = var.cluster_name
