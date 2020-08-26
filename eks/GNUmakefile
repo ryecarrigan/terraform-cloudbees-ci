@@ -20,6 +20,24 @@ cluster-init roots/cluster_setup/.terraform/terraform.tfstate:
 	$(call check_defined, BUCKET_NAME, name of the backend state bucket)
 	@cd roots/cluster_setup && \
 		terraform init \
+			-reconfigure \
+			-backend-config="bucket=$(BUCKET_NAME)"
+
+
+.PHONE: nodes
+nodes: roots/cluster_nodes
+	$(call check_defined, BUCKET_NAME, name for the backend state bucket)
+	$(call check_defined, CLUSTER_NAME, name of the EKS cluster)
+	@cd roots/cluster_nodes && \
+		terraform $(ACTION) \
+			-var "bucket_name=$(BUCKET_NAME)" \
+			-var "cluster_name=$(CLUSTER_NAME)"
+
+nodes-init roots/cluster_nodes/.terraform/terraform.tfstate:
+	$(call check_defined, BUCKET_NAME, name for the backend state bucket)
+	@cd roots/cluster_nodes && \
+		terraform init \
+			-reconfigure \
 			-backend-config="bucket=$(BUCKET_NAME)"
 
 
@@ -36,6 +54,7 @@ resources-init roots/cluster_resources/.terraform/terraform.tfstate:
 	$(call check_defined, BUCKET_NAME, name for the backend state bucket)
 	@cd roots/cluster_resources && \
 		terraform init \
+			-reconfigure \
 			-backend-config="bucket=$(BUCKET_NAME)"
 
 windows-add:
