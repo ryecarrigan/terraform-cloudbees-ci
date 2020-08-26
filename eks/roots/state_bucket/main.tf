@@ -1,16 +1,10 @@
-terraform {
-  required_version = ">= 0.12.0"
-}
-
-provider "aws" {
-  version = "~> 2.58"
-}
+provider "aws" {}
 
 variable "bucket_name" {}
 
 variable "extra_tags" {
   default = {}
-  type    = "map"
+  type    = map(string)
 }
 
 resource "aws_s3_bucket" "state" {

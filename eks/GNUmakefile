@@ -8,6 +8,12 @@ bucket:
 		terraform $(ACTION) \
 			-var "bucket_name=$(BUCKET_NAME)"
 
+bucket-init roots/state_bucket/.terraform/terraform.tfstate:
+	$(call check_defined, BUCKET_NAME, name of the backend state bucket)
+	@cd roots/state_bucket && \
+		terraform init \
+			-reconfigure
+
 
 .PHONY: cluster
 cluster: roots/cluster_setup/.terraform/terraform.tfstate
