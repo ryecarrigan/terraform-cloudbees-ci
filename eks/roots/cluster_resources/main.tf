@@ -1,13 +1,10 @@
 terraform {
-  required_version = ">= 0.12.0"
   backend "s3" {
-    key = "terraform_cbci/cluster_resources/terraform.tfstate"
+    key = "cloudbees_ci/cluster_resources/terraform.tfstate"
   }
 }
 
-provider "aws" {
-  version = "~> 2.58"
-}
+provider "aws" {}
 
 provider "helm" {
   kubernetes {
@@ -16,8 +13,6 @@ provider "helm" {
     token                  = local.cluster_auth_token
     load_config_file       = false
   }
-
-  version = "~> 1.1.1"
 }
 
 provider "kubernetes" {
@@ -25,7 +20,6 @@ provider "kubernetes" {
   cluster_ca_certificate = local.cluster_ca_certificate
   token                  = local.cluster_auth_token
   load_config_file       = false
-  version                = "~> 1.11"
 }
 
 variable "acm_certificate_arn" {
@@ -41,10 +35,7 @@ variable "autoscaler_tag" {
 }
 
 variable "bucket_name" {}
-variable "chart_version" {
-  default = "3.16.1"
-}
-
+variable "chart_version" {}
 variable "cluster_name" {}
 variable "hibernation_enabled" {
   default = true
@@ -58,8 +49,13 @@ variable "agent_namespace" {
   default = "agents"
 }
 
-variable "cjoc_namespace" {
+variable "oc_namespace" {
   default = "cjoc"
+}
+
+variable "controller_namespaces" {
+  default = []
+  type    = set(string)
 }
 
 variable "nginx_namespace" {
@@ -72,7 +68,7 @@ variable "release_name" {
 
 resource "kubernetes_namespace" "cjoc" {
   metadata {
-    name = var.cjoc_namespace
+    name = var.oc_namespace
   }
 }
 
@@ -87,7 +83,7 @@ resource "helm_release" "cjoc" {
 
   chart      = "cloudbees/cloudbees-core"
   name       = var.release_name
-  namespace  = var.cjoc_namespace
+  namespace  = kubernetes_namespace.cjoc.metadata[0].name
   repository = data.helm_repository.cloudbees.metadata[0].name
   values     = [data.template_file.cloudbees_values.rendered]
   version    = var.chart_version
@@ -96,7 +92,7 @@ resource "helm_release" "cjoc" {
 resource "helm_release" "cluster_autoscaler" {
   chart      = "stable/cluster-autoscaler"
   name       = "cluster-autoscaler"
-  namespace  = "kube-system"
+  namespace  = local.kube_system
   repository = data.helm_repository.stable.metadata[0].name
   values     = [data.template_file.autoscaler_values.rendered]
 }
@@ -106,43 +102,27 @@ resource "helm_release" "nginx" {
 
   chart      = "stable/nginx-ingress"
   name       = var.release_name
-  namespace  = var.nginx_namespace
+  namespace  = kubernetes_namespace.nginx.metadata[0].name
   repository = data.helm_repository.stable.metadata[0].name
   values     = [data.template_file.nginx_values.rendered]
   version    = "1.31.0"
 }
 
-module "iam_auth" {
-  providers = { aws = aws, kubernetes = kubernetes }
-  source    = "git@github.com:ryecarrigan/terraform-eks-iam-auth.git?ref=v1.0.2"
-
-  cluster_name           = var.cluster_name
-  linux_node_role_arns   = [data.terraform_remote_state.eks_cluster.outputs.linux_node_role_arn]
-  windows_node_role_arns = [data.terraform_remote_state.eks_cluster.outputs.windows_node_role_arn]
+resource "helm_release" "node_termination_handler" {
+  chart      = "eks/aws-node-termination-handler"
+  name       = "aws-node-termination-handler"
+  namespace  = local.kube_system
+  repository = data.helm_repository.eks.metadata[0].name
 }
 
-module "namespace_blue" {
-  providers = { helm = helm, kubernetes = kubernetes }
-  source    = "git@github.com:ryecarrigan/terraform-cbci-namespace.git?ref=v2.0.0"
+module "controller_namespaces" {
+  for_each = var.controller_namespaces
+  source   = "git@github.com:ryecarrigan/terraform-cbci-namespace.git?ref=v2.0.0"
 
-  chart_version         = var.chart_version
   host_name             = var.host_name
-  master_namespace_name = local.namespace_blue
-  oc_namespace_name     = var.cjoc_namespace
-  release_name          = local.namespace_blue
-}
-
-module "namespace_green" {
-  providers = { helm = helm, kubernetes = kubernetes }
-  source    = "git@github.com:ryecarrigan/terraform-cbci-namespace.git?ref=v2.0.0"
-
-  agent_namespace_name   = var.agent_namespace
-  chart_version          = var.chart_version
-  create_agent_namespace = true
-  host_name              = var.host_name
-  master_namespace_name  = local.namespace_green
-  oc_namespace_name      = var.cjoc_namespace
-  release_name           = local.namespace_green
+  master_namespace_name = each.value
+  oc_namespace_name     = var.oc_namespace
+  release_name          = each.value
 }
 
 data "aws_eks_cluster" "cluster" {
@@ -158,6 +138,11 @@ data "aws_region" "current" {}
 data "helm_repository" "cloudbees" {
   name = "cloudbees"
   url  = "https://charts.cloudbees.com/public/cloudbees"
+}
+
+data "helm_repository" "eks" {
+  name = "eks"
+  url  = "https://aws.github.io/eks-charts"
 }
 
 data "helm_repository" "stable" {
@@ -194,17 +179,9 @@ data "template_file" "cloudbees_values" {
 }
 
 data "template_file" "nginx_values" {
-  template = file("${path.module}/${local.nginx_values_file}")
+  template = file("${path.module}/${local.protocol}_values.yaml.tpl")
   vars = {
     acm_certificate_arn = var.acm_certificate_arn
-  }
-}
-
-data "terraform_remote_state" "eks_cluster" {
-  backend = "s3"
-  config = {
-    bucket = var.bucket_name
-    key    = "terraform_cbci/cluster_setup/terraform.tfstate"
   }
 }
 
@@ -215,9 +192,7 @@ output "ingress_hostname" {
 locals {
   cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+  kube_system            = "kube-system"
   kubernetes_host        = data.aws_eks_cluster.cluster.endpoint
-  namespace_blue         = "blue"
-  namespace_green        = "green"
-  nginx_values_file      = (var.acm_certificate_arn == "") ? "http_values.yaml.tpl" : "https_values.yaml.tpl"
   protocol               = (var.acm_certificate_arn == "") ? "http" : "https"
 }

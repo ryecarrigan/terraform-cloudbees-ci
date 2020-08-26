@@ -22,11 +22,14 @@ controller:
       https: http
     annotations:
       service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: '3600'
       service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
       service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
       service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "${acm_certificate_arn}"
       service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: "ELBSecurityPolicy-TLS-1-2-2017-01"
-      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: '3600'
+      service.beta.kubernetes.io/aws-load-balancer-type: 'elb'
     externalTrafficPolicy: "Local"
+    loadBalancerSourceRanges: []
+
 tcp:
   50000: "{{ .Release.Namespace }}/cjoc:50000:PROXY"
