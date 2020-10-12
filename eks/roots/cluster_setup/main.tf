@@ -31,7 +31,7 @@ module "vpc" {
 module "eks_cluster" {
   source = "git@github.com:ryecarrigan/terraform-eks-cluster.git?ref=v1.2.1"
 
-  bastion_count      = 0
+  bastion_count      = 1
   bastion_key_name   = var.key_name
   cluster_name       = var.cluster_name
   eks_version        = var.eks_version

@@ -53,7 +53,7 @@ resource "kubernetes_config_map" "iam_auth" {
 
 module "eks_linux" {
   for_each = var.linux_asg_names
-  source   = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v3.0.1"
+  source   = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v3.0.2"
 
   autoscaler_enabled = true
   cluster_name       = var.cluster_name
@@ -63,7 +63,7 @@ module "eks_linux" {
   instance_types     = var.instance_types
   key_name           = var.key_name
   maximum_nodes      = 8
-  minimum_nodes      = 0
+  minimum_nodes      = 1
   node_name_prefix   = "${var.cluster_name}-${each.value}"
   security_group_ids = [local.security_group_id]
   subnet_ids         = local.subnet_ids
@@ -73,7 +73,7 @@ module "eks_linux" {
 # Windows nodes untested and not guaranteed!
 module "eks_windows" {
   for_each = var.windows_asg_names
-  source   = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v3.0.1"
+  source   = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v3.0.2"
 
   autoscaler_enabled   = false
   cluster_name         = var.cluster_name
@@ -149,7 +149,7 @@ locals {
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   kubernetes_host        = data.aws_eks_cluster.cluster.endpoint
   security_group_id      = data.terraform_remote_state.eks_cluster.outputs.node_security_group_id
-  subnet_ids             = data.terraform_remote_state.eks_cluster.outputs.private_subnet_ids
+  subnet_ids             = toset(data.terraform_remote_state.eks_cluster.outputs.private_subnet_ids)
 }
 
 locals {
