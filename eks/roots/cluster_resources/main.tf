@@ -59,7 +59,7 @@ variable "controller_namespaces" {
 }
 
 variable "nginx_namespace" {
-  default = "nginx"
+  default = "ingress-nginx"
 }
 
 variable "release_name" {
@@ -72,14 +72,14 @@ resource "kubernetes_namespace" "cjoc" {
   }
 }
 
-resource "kubernetes_namespace" "nginx" {
+resource "kubernetes_namespace" "ingress_nginx" {
   metadata {
     name = var.nginx_namespace
   }
 }
 
 resource "helm_release" "cjoc" {
-  depends_on = [kubernetes_namespace.cjoc, helm_release.nginx]
+  depends_on = [kubernetes_namespace.cjoc, helm_release.ingress_nginx]
 
   chart      = "cloudbees/cloudbees-core"
   name       = var.release_name
@@ -97,15 +97,15 @@ resource "helm_release" "cluster_autoscaler" {
   values     = [data.template_file.autoscaler_values.rendered]
 }
 
-resource "helm_release" "nginx" {
-  depends_on = [kubernetes_namespace.nginx]
+resource "helm_release" "ingress_nginx" {
+  depends_on = [kubernetes_namespace.ingress_nginx]
 
-  chart      = "stable/nginx-ingress"
-  name       = var.release_name
-  namespace  = kubernetes_namespace.nginx.metadata[0].name
-  repository = data.helm_repository.stable.metadata[0].name
+  chart      = "ingress-nginx/ingress-nginx"
+  name       = "ingress-nginx"
+  namespace  = kubernetes_namespace.ingress_nginx.metadata[0].name
+  repository = data.helm_repository.ingress_nginx.metadata[0].name
   values     = [data.template_file.nginx_values.rendered]
-  version    = "1.31.0"
+  version    = "3.1.0"
 }
 
 resource "helm_release" "node_termination_handler" {
@@ -145,17 +145,22 @@ data "helm_repository" "eks" {
   url  = "https://aws.github.io/eks-charts"
 }
 
+data "helm_repository" "ingress_nginx" {
+  name = "ingress-nginx"
+  url  = "https://kubernetes.github.io/ingress-nginx"
+}
+
 data "helm_repository" "stable" {
   name = "stable"
   url  = "https://kubernetes-charts.storage.googleapis.com"
 }
 
 data "kubernetes_service" "ingress_controller" {
-  depends_on = [helm_release.nginx]
+  depends_on = [helm_release.ingress_nginx]
 
   metadata {
     namespace = var.nginx_namespace
-    name      = "${var.release_name}-nginx-ingress-controller"
+    name      = "ingress-nginx-controller"
   }
 }
 
