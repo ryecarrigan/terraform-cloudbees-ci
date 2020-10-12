@@ -30,7 +30,7 @@ cluster-init roots/cluster_setup/.terraform/terraform.tfstate:
 			-backend-config="bucket=$(BUCKET_NAME)"
 
 
-.PHONE: nodes
+.PHONY: nodes
 nodes: roots/cluster_nodes
 	$(call check_defined, BUCKET_NAME, name for the backend state bucket)
 	$(call check_defined, CLUSTER_NAME, name of the EKS cluster)
