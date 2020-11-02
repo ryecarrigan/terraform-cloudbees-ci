@@ -1,5 +1,5 @@
 OperationsCenter:
-  platform: 'aws'
+  Platform: aws
   HostName: ${host_name}
   Protocol: ${protocol}
   ServiceType: ClusterIP
