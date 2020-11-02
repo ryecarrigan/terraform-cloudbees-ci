@@ -4,9 +4,9 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
+    stage('Hello World') {
       steps {
-        checkout scm
+        echo "Hello world!"
       }
     }
   }
