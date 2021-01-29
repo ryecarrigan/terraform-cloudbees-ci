@@ -22,14 +22,14 @@ variable "ssh_cidr" {
 }
 
 module "vpc" {
-  source = "git@github.com:ryecarrigan/terraform-eks-vpc.git?ref=v1.1.2"
+  source   = "../../modules/terraform-eks-vpc"
 
   cluster_name = var.cluster_name
   extra_tags   = var.extra_tags
 }
 
 module "eks_cluster" {
-  source = "git@github.com:ryecarrigan/terraform-eks-cluster.git?ref=v1.2.1"
+  source   = "../../modules/terraform-eks-cluster"
 
   bastion_count      = 1
   bastion_key_name   = var.key_name

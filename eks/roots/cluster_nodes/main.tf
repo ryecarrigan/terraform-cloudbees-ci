@@ -53,7 +53,7 @@ resource "kubernetes_config_map" "iam_auth" {
 
 module "eks_linux" {
   for_each = var.linux_asg_names
-  source   = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v3.0.2"
+  source   = "../../modules/terraform-eks-asg"
 
   autoscaler_enabled = true
   cluster_name       = var.cluster_name
@@ -73,7 +73,7 @@ module "eks_linux" {
 # Windows nodes untested and not guaranteed!
 module "eks_windows" {
   for_each = var.windows_asg_names
-  source   = "git@github.com:ryecarrigan/terraform-eks-asg.git?ref=v3.0.2"
+  source   = "../../modules/terraform-eks-asg"
 
   autoscaler_enabled   = false
   cluster_name         = var.cluster_name

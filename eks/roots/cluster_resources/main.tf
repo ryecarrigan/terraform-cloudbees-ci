@@ -117,7 +117,7 @@ resource "helm_release" "node_termination_handler" {
 
 module "controller_namespaces" {
   for_each = var.controller_namespaces
-  source   = "git@github.com:ryecarrigan/terraform-cbci-namespace.git?ref=v2.0.0"
+  source   = "../../modules/terraform-cbci-namespace"
 
   host_name             = var.host_name
   master_namespace_name = each.value
