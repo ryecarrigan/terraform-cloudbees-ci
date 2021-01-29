@@ -90,10 +90,10 @@ resource "helm_release" "cjoc" {
 }
 
 resource "helm_release" "cluster_autoscaler" {
-  chart      = "stable/cluster-autoscaler"
+  chart      = "autoscaler/cluster-autoscaler"
   name       = "cluster-autoscaler"
   namespace  = local.kube_system
-  repository = data.helm_repository.stable.metadata[0].name
+  repository = data.helm_repository.autoscaler.metadata[0].name
   values     = [data.template_file.autoscaler_values.rendered]
 }
 
@@ -135,6 +135,11 @@ data "aws_eks_cluster_auth" "auth" {
 
 data "aws_region" "current" {}
 
+data helm_repository "autoscaler" {
+  name = "autoscaler"
+  url  = "https://kubernetes.github.io/autoscaler"
+}
+
 data "helm_repository" "cloudbees" {
   name = "cloudbees"
   url  = "https://charts.cloudbees.com/public/cloudbees"
@@ -148,11 +153,6 @@ data "helm_repository" "eks" {
 data "helm_repository" "ingress_nginx" {
   name = "ingress-nginx"
   url  = "https://kubernetes.github.io/ingress-nginx"
-}
-
-data "helm_repository" "stable" {
-  name = "stable"
-  url  = "https://kubernetes-charts.storage.googleapis.com"
 }
 
 data "kubernetes_service" "ingress_controller" {
