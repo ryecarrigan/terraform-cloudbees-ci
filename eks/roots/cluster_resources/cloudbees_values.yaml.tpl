@@ -6,3 +6,9 @@ OperationsCenter:
 
 Hibernation:
   Enabled: ${hibernation_enabled}
+
+Agents:
+  Enabled: true
+  SeparateNamespace:
+    Enabled: true
+    Create: true
