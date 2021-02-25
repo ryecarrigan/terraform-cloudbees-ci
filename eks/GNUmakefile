@@ -1,6 +1,9 @@
 ACTION ?= plan
 
 
+.PHONY: init
+init: cluster-init nodes-init resources-init
+
 .PHONY: bucket
 bucket:
 	$(call check_defined, BUCKET_NAME, name of the backend state bucket)
