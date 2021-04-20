@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    key = "cloudbees_ci/cluster_nodes/terraform.tfstate"
+    key = "cloudbees_sda/nodes/terraform.tfstate"
   }
 }
 
@@ -22,7 +22,7 @@ variable "extra_tags" {
 }
 
 variable "instance_types" {
-  default = ["m5.large", "m5a.large", "m4.large"]
+  default = ["m5.xlarge", "m5a.xlarge", "m4.xlarge"]
   type    = set(string)
 }
 
@@ -33,6 +33,14 @@ variable "key_name" {
 variable "linux_asg_names" {
   default = ["linux-0"]
   type    = set(string)
+}
+
+variable "cloudbees_namespace" {
+  default = "cloudbees"
+}
+
+variable "nginx_namespace" {
+  default = "nginx"
 }
 
 variable "windows_asg_names" {
@@ -48,6 +56,18 @@ resource "kubernetes_config_map" "iam_auth" {
 
   data = {
     mapRoles = join("\n", concat(local.linux_roles, local.windows_roles))
+  }
+}
+
+resource "kubernetes_namespace" "cloudbees" {
+  metadata {
+    name = var.cloudbees_namespace
+  }
+}
+
+resource "kubernetes_namespace" "ingress_nginx" {
+  metadata {
+    name = var.nginx_namespace
   }
 }
 
@@ -140,7 +160,7 @@ data "terraform_remote_state" "eks_cluster" {
   backend = "s3"
   config = {
     bucket = var.bucket_name
-    key    = "cloudbees_ci/cluster_setup/terraform.tfstate"
+    key    = "cloudbees_sda/cluster/terraform.tfstate"
   }
 }
 
@@ -171,4 +191,12 @@ EOT
     - eks:kube-proxy-windows
 EOT
   ]
+}
+
+output "cloudbees_namespace" {
+  value = kubernetes_namespace.cloudbees.metadata[0].name
+}
+
+output "nginx_namespace" {
+  value = kubernetes_namespace.ingress_nginx.metadata[0].name
 }

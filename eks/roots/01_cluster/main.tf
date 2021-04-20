@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    key = "cloudbees_ci/cluster_setup/terraform.tfstate"
+    key = "cloudbees_sda/cluster/terraform.tfstate"
   }
 }
 

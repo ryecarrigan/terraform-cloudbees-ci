@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    key = "cloudbees_ci/cluster_resources/terraform.tfstate"
+    key = "cloudbees_sda/helm/terraform.tfstate"
   }
 }
 
@@ -26,12 +26,16 @@ variable "acm_certificate_arn" {
   default = ""
 }
 
+variable "admin_password" {
+  default = ""
+}
+
 variable "autoscaler_repository" {
   default = "us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler"
 }
 
 variable "autoscaler_tag" {
-  default = "v1.17.3"
+  default = "v1.18.3"
 }
 
 variable "bucket_name" {}
@@ -49,41 +53,16 @@ variable "agent_namespace" {
   default = "agents"
 }
 
-variable "oc_namespace" {
-  default = "cjoc"
-}
-
-variable "controller_namespaces" {
-  default = []
-  type    = set(string)
-}
-
-variable "nginx_namespace" {
-  default = "ingress-nginx"
-}
-
 variable "release_name" {
   default = "cloudbees-ci"
 }
 
-resource "kubernetes_namespace" "cjoc" {
-  metadata {
-    name = var.oc_namespace
-  }
-}
-
-resource "kubernetes_namespace" "ingress_nginx" {
-  metadata {
-    name = var.nginx_namespace
-  }
-}
-
 resource "helm_release" "cjoc" {
-  depends_on = [kubernetes_namespace.cjoc, helm_release.ingress_nginx]
+  depends_on = [helm_release.ingress_nginx]
 
-  chart      = "cloudbees/cloudbees-core"
+  chart      = "cloudbees/cloudbees-sda"
   name       = var.release_name
-  namespace  = kubernetes_namespace.cjoc.metadata[0].name
+  namespace  = local.cloudbees_namespace
   repository = data.helm_repository.cloudbees.metadata[0].name
   values     = [data.template_file.cloudbees_values.rendered]
   version    = var.chart_version
@@ -98,11 +77,9 @@ resource "helm_release" "cluster_autoscaler" {
 }
 
 resource "helm_release" "ingress_nginx" {
-  depends_on = [kubernetes_namespace.ingress_nginx]
-
   chart      = "ingress-nginx/ingress-nginx"
   name       = "ingress-nginx"
-  namespace  = kubernetes_namespace.ingress_nginx.metadata[0].name
+  namespace  = local.nginx_namespace
   repository = data.helm_repository.ingress_nginx.metadata[0].name
   values     = [data.template_file.nginx_values.rendered]
   version    = "3.1.0"
@@ -113,16 +90,6 @@ resource "helm_release" "node_termination_handler" {
   name       = "aws-node-termination-handler"
   namespace  = local.kube_system
   repository = data.helm_repository.eks.metadata[0].name
-}
-
-module "controller_namespaces" {
-  for_each = var.controller_namespaces
-  source   = "../../modules/terraform-cbci-namespace"
-
-  host_name             = var.host_name
-  master_namespace_name = each.value
-  oc_namespace_name     = var.oc_namespace
-  release_name          = each.value
 }
 
 data "aws_eks_cluster" "cluster" {
@@ -159,7 +126,7 @@ data "kubernetes_service" "ingress_controller" {
   depends_on = [helm_release.ingress_nginx]
 
   metadata {
-    namespace = var.nginx_namespace
+    namespace = local.nginx_namespace
     name      = "ingress-nginx-controller"
   }
 }
@@ -177,6 +144,7 @@ data "template_file" "autoscaler_values" {
 data "template_file" "cloudbees_values" {
   template = file("${path.module}/cloudbees_values.yaml.tpl")
   vars = {
+    admin_password      = var.admin_password
     hibernation_enabled = var.hibernation_enabled
     host_name           = var.host_name
     protocol            = local.protocol
@@ -190,14 +158,24 @@ data "template_file" "nginx_values" {
   }
 }
 
+data "terraform_remote_state" "nodes" {
+  backend = "s3"
+  config = {
+    bucket = var.bucket_name
+    key    = "cloudbees_sda/nodes/terraform.tfstate"
+  }
+}
+
 output "ingress_hostname" {
   value = data.kubernetes_service.ingress_controller.load_balancer_ingress[0].hostname
 }
 
 locals {
+  cloudbees_namespace    = data.terraform_remote_state.nodes.outputs.cloudbees_namespace
   cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   kube_system            = "kube-system"
   kubernetes_host        = data.aws_eks_cluster.cluster.endpoint
+  nginx_namespace        = data.terraform_remote_state.nodes.outputs.nginx_namespace
   protocol               = (var.acm_certificate_arn == "") ? "http" : "https"
 }
