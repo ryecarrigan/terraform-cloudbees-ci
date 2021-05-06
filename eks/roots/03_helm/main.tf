@@ -41,6 +41,11 @@ variable "autoscaler_tag" {
 variable "bucket_name" {}
 variable "chart_version" {}
 variable "cluster_name" {}
+variable "extra_tags" {
+  default = {}
+  type    = map(string)
+}
+
 variable "hibernation_enabled" {
   default = true
 }
@@ -64,7 +69,7 @@ resource "helm_release" "cjoc" {
   name       = var.release_name
   namespace  = local.cloudbees_namespace
   repository = data.helm_repository.cloudbees.metadata[0].name
-  values     = [data.template_file.cloudbees_values.rendered]
+  values     = [data.template_file.cloudbees_values.rendered, file("cloudbees.yaml")]
   version    = var.chart_version
 }
 
@@ -90,6 +95,15 @@ resource "helm_release" "node_termination_handler" {
   name       = "aws-node-termination-handler"
   namespace  = local.kube_system
   repository = data.helm_repository.eks.metadata[0].name
+}
+
+module "eks_efs_csi" {
+  source = "../../modules/terraform-eks-efs"
+
+  cluster_name        = var.cluster_name
+  subnet_ids          = local.subnet_ids
+  node_role_ids       = local.node_role_ids
+  node_security_group = local.node_security_group
 }
 
 data "aws_eks_cluster" "cluster" {
@@ -158,6 +172,14 @@ data "template_file" "nginx_values" {
   }
 }
 
+data "terraform_remote_state" "eks_cluster" {
+  backend = "s3"
+  config = {
+    bucket = var.bucket_name
+    key    = "cloudbees_sda/cluster/terraform.tfstate"
+  }
+}
+
 data "terraform_remote_state" "nodes" {
   backend = "s3"
   config = {
@@ -177,5 +199,8 @@ locals {
   kube_system            = "kube-system"
   kubernetes_host        = data.aws_eks_cluster.cluster.endpoint
   nginx_namespace        = data.terraform_remote_state.nodes.outputs.nginx_namespace
+  node_role_ids          = toset(data.terraform_remote_state.nodes.outputs.node_role_ids)
+  node_security_group    = data.terraform_remote_state.eks_cluster.outputs.node_security_group_id
   protocol               = (var.acm_certificate_arn == "") ? "http" : "https"
+  subnet_ids             = toset(data.terraform_remote_state.eks_cluster.outputs.private_subnet_ids)
 }

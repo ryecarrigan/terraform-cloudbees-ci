@@ -8,12 +8,6 @@ ci:
   Hibernation:
     Enabled: ${hibernation_enabled}
 
-  Agents:
-    Enabled: true
-    SeparateNamespace:
-      Enabled: true
-      Create: true
-
 cd:
   ingress:
     host: ${host_name}
