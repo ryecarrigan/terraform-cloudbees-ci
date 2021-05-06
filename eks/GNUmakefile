@@ -2,7 +2,7 @@ ACTION ?= plan
 
 
 .PHONY: init
-init: cluster-init nodes-init resources-init
+init: cluster-init nodes-init helm-init
 
 .PHONY: bucket
 0 bucket:
@@ -47,7 +47,7 @@ nodes-init roots/02_nodes/.terraform/terraform.tfstate:
 
 
 .PHONY: helm
-3 resources: roots/03_helm
+3 helm: roots/03_helm
 	$(call check_defined, TF_VAR_bucket_name, name for the backend state bucket)
 	$(call check_defined, TF_VAR_cluster_name, name of the EKS cluster)
 	@cd roots/03_helm && \
@@ -65,9 +65,6 @@ helm-init roots/03_helm/.terraform/terraform.tfstate:
 4 cname: roots/04_cname
 	@cd roots/04_cname && \
 		terraform $(ACTION)
-
-.PHONY: init
-init: cluster-init nodes-init helm-init
 
 
 windows-add:
