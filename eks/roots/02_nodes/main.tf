@@ -6,6 +6,15 @@ terraform {
 
 provider "aws" {}
 
+provider "helm" {
+  kubernetes {
+    host                   = local.kubernetes_host
+    cluster_ca_certificate = local.cluster_ca_certificate
+    token                  = local.cluster_auth_token
+    load_config_file       = false
+  }
+}
+
 provider "kubernetes" {
   host                   = local.kubernetes_host
   cluster_ca_certificate = local.cluster_ca_certificate
@@ -107,6 +116,16 @@ module "eks_windows" {
   security_group_ids   = [local.security_group_id]
   subnet_ids           = local.subnet_ids
   user_data            = data.template_file.windows_user_data.rendered
+}
+
+module "eks_efs_csi" {
+  source = "../../modules/terraform-eks-efs"
+
+  cluster_name        = var.cluster_name
+  extra_tags          = var.extra_tags
+  subnet_ids          = local.subnet_ids
+  node_role_ids       = [for name in var.linux_asg_names: module.eks_linux[name].node_role_id]
+  node_security_group = local.security_group_id
 }
 
 data "aws_ami" "linux_ami" {

@@ -1,4 +1,7 @@
 ci:
+  Persistence:
+    StorageClass: efs-sc
+
   OperationsCenter:
     Platform: aws
     HostName: ${host_name}
