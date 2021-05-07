@@ -64,12 +64,13 @@ variable "release_name" {
 
 resource "helm_release" "cjoc" {
   depends_on = [helm_release.ingress_nginx]
+  timeout    = 600
 
   chart      = "cloudbees/cloudbees-sda"
   name       = var.release_name
-  namespace  = local.cloudbees_namespace
+  namespace  = data.kubernetes_namespace.cloudbees.metadata[0].name
   repository = data.helm_repository.cloudbees.metadata[0].name
-  values     = [data.template_file.cloudbees_values.rendered, file("cloudbees.yaml")]
+  values     = [data.template_file.cloudbees_values.rendered]
   version    = var.chart_version
 }
 
@@ -84,7 +85,7 @@ resource "helm_release" "cluster_autoscaler" {
 resource "helm_release" "ingress_nginx" {
   chart      = "ingress-nginx/ingress-nginx"
   name       = "ingress-nginx"
-  namespace  = local.nginx_namespace
+  namespace  = data.kubernetes_namespace.nginx.metadata[0].name
   repository = data.helm_repository.ingress_nginx.metadata[0].name
   values     = [data.template_file.nginx_values.rendered]
   version    = "3.1.0"
@@ -95,15 +96,6 @@ resource "helm_release" "node_termination_handler" {
   name       = "aws-node-termination-handler"
   namespace  = local.kube_system
   repository = data.helm_repository.eks.metadata[0].name
-}
-
-module "eks_efs_csi" {
-  source = "../../modules/terraform-eks-efs"
-
-  cluster_name        = var.cluster_name
-  subnet_ids          = local.subnet_ids
-  node_role_ids       = local.node_role_ids
-  node_security_group = local.node_security_group
 }
 
 data "aws_eks_cluster" "cluster" {
@@ -134,6 +126,18 @@ data "helm_repository" "eks" {
 data "helm_repository" "ingress_nginx" {
   name = "ingress-nginx"
   url  = "https://kubernetes.github.io/ingress-nginx"
+}
+
+data "kubernetes_namespace" "cloudbees" {
+  metadata {
+    name = local.cloudbees_namespace
+  }
+}
+
+data "kubernetes_namespace" "nginx" {
+  metadata {
+    name = local.nginx_namespace
+  }
 }
 
 data "kubernetes_service" "ingress_controller" {
@@ -172,14 +176,6 @@ data "template_file" "nginx_values" {
   }
 }
 
-data "terraform_remote_state" "eks_cluster" {
-  backend = "s3"
-  config = {
-    bucket = var.bucket_name
-    key    = "cloudbees_sda/cluster/terraform.tfstate"
-  }
-}
-
 data "terraform_remote_state" "nodes" {
   backend = "s3"
   config = {
@@ -199,8 +195,5 @@ locals {
   kube_system            = "kube-system"
   kubernetes_host        = data.aws_eks_cluster.cluster.endpoint
   nginx_namespace        = data.terraform_remote_state.nodes.outputs.nginx_namespace
-  node_role_ids          = toset(data.terraform_remote_state.nodes.outputs.node_role_ids)
-  node_security_group    = data.terraform_remote_state.eks_cluster.outputs.node_security_group_id
   protocol               = (var.acm_certificate_arn == "") ? "http" : "https"
-  subnet_ids             = toset(data.terraform_remote_state.eks_cluster.outputs.private_subnet_ids)
 }
