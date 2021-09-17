@@ -7,7 +7,10 @@ terraform {
 provider "aws" {}
 
 variable "cluster_name" {}
-variable "eks_version" {}
+variable "eks_version" {
+  default = "1.19"
+}
+
 variable "extra_tags" {
   default = {}
   type    = map(string)
