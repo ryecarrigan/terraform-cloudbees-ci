@@ -113,6 +113,10 @@ data "aws_route53_zone" "domain_name" {
 resource "aws_acm_certificate" "certificate" {
   domain_name       = var.host_name
   validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_route53_record" "validation" {
