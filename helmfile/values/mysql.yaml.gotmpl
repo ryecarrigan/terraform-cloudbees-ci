@@ -1,0 +1,17 @@
+auth:
+  username: flow
+  password: {{ .Values.cd.adminPassword }}
+  rootPassword: {{ .Values.cd.adminPassword }}
+
+primary:
+  extraEnvVars:
+    - name: LANG
+      value: C.UTF_8
+
+initdbScripts:
+  charset.sql: |
+    GRANT ALL PRIVILEGES ON flowdb.* TO 'flow'@'%';
+    GRANT ALL PRIVILEGES ON flowdb_upgrade.* TO 'flow'@'%';
+    CREATE DATABASE flowdb CHARACTER SET utf8 COLLATE utf8_general_ci;
+    CREATE DATABASE flowdb_upgrade CHARACTER SET utf8 COLLATE utf8_general_ci;
+    FLUSH PRIVILEGES;

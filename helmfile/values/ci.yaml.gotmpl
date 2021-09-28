@@ -1,0 +1,37 @@
+Persistence:
+  StorageClass: {{ .Values.rwxStorageClass }}
+
+OperationsCenter:
+  Image:
+    dockerImage: {{ .Values.ci.ocImage }}:{{ .Values.ci.version }}
+  Platform: {{ env "CI_PLATFORM" | default "aws" }}
+  HostName: {{ .Values.ci.hostName }}
+  Protocol: https
+  ServiceType: ClusterIP
+  CasC:
+    Enabled: true
+  JavaOpts:
+    -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true
+  ExtraVolumes:
+  - name: configmap-volume
+    configMap:
+      name: oc-configmap
+  ExtraVolumeMounts:
+  - name: configmap-volume
+    mountPath: /var/jenkins_config/oc-configmap
+    readOnly: true
+
+Hibernation:
+  Enabled: true
+
+Ingress:
+  Class: alb
+  Annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+
+Master:
+  Image:
+    dockerImage: {{ .Values.ci.mcImage }}:{{ .Values.ci.version }}
+Agents:
+  Image:
+    dockerImage: {{ .Values.ci.agentImage }}:{{ .Values.ci.version }}

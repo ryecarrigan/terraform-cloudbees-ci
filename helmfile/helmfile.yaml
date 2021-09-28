@@ -1,0 +1,29 @@
+repositories:
+  - name: cloudbees
+    url: https://charts.cloudbees.com/public/cloudbees
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+
+releases:
+  - name: cloudbees-sda-ci
+    namespace: {{ requiredEnv "CI_NAMESPACE" }}
+    chart: cloudbees/cloudbees-core
+    version: {{ requiredEnv "CI_CHART_VERSION" }}
+    values:
+      - values/ci.yaml.gotmpl
+  - name: cloudbees-sda-cd
+    namespace: {{ requiredEnv "CD_NAMESPACE" }}
+    chart: cloudbees/cloudbees-flow
+    version: {{ requiredEnv "CD_CHART_VERSION" }}
+    values:
+      - values/cd.yaml.gotmpl
+  - name: mysql
+    namespace: {{ env "MYSQL_NAMESPACE" | default "mysql" }}
+    chart: bitnami/mysql
+    values:
+      - values/mysql.yaml.gotmpl
+
+environments:
+  default:
+    values:
+      - values/default.yaml.gotmpl

@@ -1,5 +1,5 @@
 .idea
 .terraform
-eks/.env
+.env
 *.tfstate*
 *.tfvars
