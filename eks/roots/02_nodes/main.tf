@@ -23,20 +23,7 @@ provider "kubernetes" {
 }
 
 variable "admin_password" {}
-
-variable "autoscaler_repository" {
-  default = "us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler"
-}
-
-variable "autoscaler_patch" {
-  default = "0"
-}
-
 variable "bucket_name" {}
-variable "cloudbees_namespace" {
-  default = "cloudbees"
-}
-
 variable "cluster_name" {}
 variable "domain_name" {}
 variable "eks_version" {
@@ -74,11 +61,6 @@ variable "windows_asg_names" {
 
 data "aws_region" "current" {}
 
-data helm_repository "autoscaler" {
-  name = "autoscaler"
-  url  = "https://kubernetes.github.io/autoscaler"
-}
-
 data "helm_repository" "eks" {
   name = "eks"
   url  = "https://aws.github.io/eks-charts"
@@ -87,16 +69,6 @@ data "helm_repository" "eks" {
 data "helm_repository" "ingress_nginx" {
   name = "ingress-nginx"
   url  = "https://kubernetes.github.io/ingress-nginx"
-}
-
-data "template_file" "autoscaler_values" {
-  template = file("${path.module}/autoscaler_values.yaml.tpl")
-  vars = {
-    aws_region       = data.aws_region.current.name
-    cluster_name     = var.cluster_name
-    image_repository = var.autoscaler_repository
-    image_tag        = local.autoscaler_tag
-  }
 }
 
 data "template_file" "nginx_values" {
@@ -146,31 +118,18 @@ resource "kubernetes_config_map" "iam_auth" {
   }
 }
 
-resource "kubernetes_namespace" "cloudbees" {
-  metadata {
-    name = var.cloudbees_namespace
-  }
-}
-
 resource "kubernetes_namespace" "ingress_nginx" {
   metadata {
     name = var.nginx_namespace
   }
 }
 
-resource "helm_release" "cluster_autoscaler" {
-  chart      = "autoscaler/cluster-autoscaler"
-  name       = "cluster-autoscaler"
-  namespace  = local.kube_system
-  repository = data.helm_repository.autoscaler.metadata[0].name
-  values     = [data.template_file.autoscaler_values.rendered]
-}
 
 resource "helm_release" "ingress_nginx" {
   chart      = "ingress-nginx/ingress-nginx"
   name       = "ingress-nginx"
   namespace  = kubernetes_namespace.ingress_nginx.metadata[0].name
-  repository = data.helm_repository.ingress_nginx.metadata[0].name
+  repository = data.helm_repository.ingress_nginx.name
   values     = [data.template_file.nginx_values.rendered]
 }
 
@@ -293,7 +252,6 @@ data "terraform_remote_state" "eks_cluster" {
 }
 
 locals {
-  autoscaler_tag         = "v${var.eks_version}.${var.autoscaler_patch}"
   cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   ingress_hostname       = data.kubernetes_service.ingress_controller.load_balancer_ingress[0].hostname

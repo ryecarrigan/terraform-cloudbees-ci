@@ -1,8 +1,10 @@
 repositories:
-  - name: cloudbees
-    url: https://charts.cloudbees.com/public/cloudbees
+  - name: autoscaler
+    url: https://kubernetes.github.io/autoscaler
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
+  - name: cloudbees
+    url: https://charts.cloudbees.com/public/cloudbees
 
 releases:
   - name: cloudbees-sda-ci
@@ -15,6 +17,8 @@ releases:
     namespace: {{ requiredEnv "CD_NAMESPACE" }}
     chart: cloudbees/cloudbees-flow
     version: {{ requiredEnv "CD_CHART_VERSION" }}
+    needs:
+      - {{ env "MYSQL_NAMESPACE" | default "mysql" }}/mysql
     values:
       - values/cd.yaml.gotmpl
   - name: mysql
@@ -22,8 +26,18 @@ releases:
     chart: bitnami/mysql
     values:
       - values/mysql.yaml.gotmpl
+  - name: cluster-autoscaler
+    namespace: kube-system
+    chart: autoscaler/cluster-autoscaler
+    version: 9.10.3
+    values:
+      - values/autoscaler.yaml.gotmpl
 
 environments:
   default:
     values:
-      - values/default.yaml.gotmpl
+      - default.yaml.gotmpl
+
+helmDefaults:
+  timeout: 600
+  wait: true
