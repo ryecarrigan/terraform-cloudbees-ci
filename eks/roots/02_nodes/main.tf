@@ -54,11 +54,6 @@ variable "nginx_namespace" {
   default = "nginx"
 }
 
-variable "windows_asg_names" {
-  default = []
-  type    = set(string)
-}
-
 data "aws_region" "current" {}
 
 data "helm_repository" "eks" {
@@ -114,7 +109,7 @@ resource "kubernetes_config_map" "iam_auth" {
   }
 
   data = {
-    mapRoles = join("\n", concat(local.linux_roles, local.windows_roles))
+    mapRoles = join("\n", concat(local.linux_roles))
   }
 }
 
@@ -123,7 +118,6 @@ resource "kubernetes_namespace" "ingress_nginx" {
     name = var.nginx_namespace
   }
 }
-
 
 resource "helm_release" "ingress_nginx" {
   chart      = "ingress-nginx/ingress-nginx"
@@ -150,25 +144,6 @@ module "eks_linux" {
   security_group_ids = [local.security_group_id]
   subnet_ids         = local.subnet_ids
   user_data          = data.template_file.linux_user_data.rendered
-}
-
-# Windows nodes untested and not guaranteed!
-module "eks_windows" {
-  for_each = var.windows_asg_names
-  source   = "../../modules/terraform-eks-asg"
-
-  autoscaler_enabled   = false
-  cluster_name         = var.cluster_name
-  desired_nodes        = 0
-  extra_tags           = var.extra_tags
-  image_id             = data.aws_ssm_parameter.windows_ami.value
-  instance_types       = var.instance_types
-  maximum_nodes        = 0
-  minimum_nodes        = 0
-  node_name_prefix     = "${var.cluster_name}-${each.value}"
-  security_group_ids   = [local.security_group_id]
-  subnet_ids           = local.subnet_ids
-  user_data            = data.template_file.windows_user_data.rendered
 }
 
 module "eks_efs_csi" {
@@ -217,10 +192,6 @@ data "aws_eks_cluster_auth" "auth" {
   name = data.aws_eks_cluster.cluster.name
 }
 
-data "aws_ssm_parameter" "windows_ami" {
-  name = "/aws/service/ami-windows-latest/Windows_Server-2019-English-Core-EKS_Optimized-${var.eks_version}/image_id"
-}
-
 data "kubernetes_service" "ingress_controller" {
   metadata {
     namespace = var.nginx_namespace
@@ -233,13 +204,6 @@ data "template_file" "linux_user_data" {
   vars = {
     bootstrap_arguments = ""
     cluster_name        = var.cluster_name
-  }
-}
-
-data "template_file" "windows_user_data" {
-  template = file("${path.module}/windows_user_data.tpl")
-  vars = {
-    cluster_name = var.cluster_name
   }
 }
 
@@ -270,16 +234,6 @@ locals {
   groups:
     - system:bootstrappers
     - system:nodes
-EOT
-  ]
-
-  windows_roles = [for name in var.windows_asg_names: <<EOT
-- rolearn: ${module.eks_windows[name].node_role_arn}
-  username: system:node:{{EC2PrivateDNSName}}
-  groups:
-    - system:bootstrappers
-    - system:nodes
-    - eks:kube-proxy-windows
 EOT
   ]
 }

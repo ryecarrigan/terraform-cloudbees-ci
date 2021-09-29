@@ -1,4 +1,0 @@
-webhook-create-signed-cert.sh
-webhook-patch-ca-bundle.sh
-vpc-admission-webhook.yaml
-vpc-admission-webhook-deployment.yaml
