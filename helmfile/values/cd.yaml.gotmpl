@@ -1,0 +1,50 @@
+dois:
+  credentials:
+    adminPassword: {{ .Values.cd.adminPassword }}
+
+flowCredentials:
+  adminPassword: {{ .Values.cd.adminPassword }}
+
+database:
+  dbName: flowdb
+  dbUser: flow
+  dbPassword: {{ .Values.cd.adminPassword }}
+  dbType: mysql
+  dbPort: 3306
+  clusterEndpoint: {{ .Values.cd.mysqlEndpoint }}
+  mysqlConnector:
+    enabled: true
+
+server:
+  telemetryData:
+    enabled: false
+  volumesPermissionsInitContainer:
+    enabled: true
+
+storage:
+  volumes:
+    serverPlugins:
+      accessMode: ReadWriteOnce
+      storageClass: {{ .Values.rwxStorageClass }}
+
+zookeeper:
+  replicaCount: 2
+
+nginx-ingress:
+  enabled: false
+
+ingress:
+  host: {{ .Values.ci.hostName }}
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+
+repository:
+  enabled: true
+
+web:
+  sharedPluginEnabled: false
+
+clusteredMode: true
+
+mariadb:
+  enabled: false

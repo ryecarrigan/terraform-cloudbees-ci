@@ -1,0 +1,17 @@
+cluster:
+  name: {{ requiredEnv "CLUSTER_NAME" }}
+  provider: {{ env "CLUSTER_PROVIDER" | default "aws" }}
+  region: {{ env "CLUSTER_REGION" | default "us-east-1" }}
+
+ci:
+  agentImage: {{ env "CI_AGENT_IMAGE" }}
+  hostName: {{ requiredEnv "HOST_NAME" }}
+  mcImage: {{ env "CI_MC_IMAGE" }}
+  ocImage: {{ env "CI_OC_IMAGE" }}
+  version: {{ env "CI_APP_VERSION" | default "2.303.2.2" }}
+
+cd:
+  adminPassword: {{ requiredEnv "CD_ADMIN_PASSWORD" }}
+  mysqlEndpoint: mysql.{{ env "MYSQL_NAMESPACE" | default "mysql" }}
+
+rwxStorageClass: gp2

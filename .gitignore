@@ -1,5 +1,7 @@
 .idea
 .terraform
-eks/.env
+.env*
+!.env.example
+.terraform.lock.hcl
 *.tfstate*
 *.tfvars
