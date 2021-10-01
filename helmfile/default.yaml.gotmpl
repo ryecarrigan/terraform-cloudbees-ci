@@ -14,4 +14,4 @@ cd:
   adminPassword: {{ requiredEnv "CD_ADMIN_PASSWORD" }}
   mysqlEndpoint: mysql.{{ env "MYSQL_NAMESPACE" | default "mysql" }}
 
-rwxStorageClass: gp2
+rwxStorageClass: efs-sc

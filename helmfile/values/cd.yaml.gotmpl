@@ -24,7 +24,6 @@ server:
 storage:
   volumes:
     serverPlugins:
-      accessMode: ReadWriteOnce
       storageClass: {{ .Values.rwxStorageClass }}
 
 zookeeper:
@@ -42,7 +41,7 @@ repository:
   enabled: true
 
 web:
-  sharedPluginEnabled: false
+  sharedPluginEnabled: true
 
 clusteredMode: true
 
