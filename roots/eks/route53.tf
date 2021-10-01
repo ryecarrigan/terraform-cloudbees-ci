@@ -1,3 +1,7 @@
+locals {
+  zone_name = length(var.zone_name) > 0 ? var.zone_name : var.host_name
+}
+
 resource "aws_acm_certificate" "certificate" {
   domain_name       = var.host_name
   validation_method = "DNS"
@@ -28,5 +32,5 @@ resource "aws_route53_record" "cname" {
 }
 
 data "aws_route53_zone" "domain_name" {
-  name = var.domain_name
+  name = local.zone_name
 }

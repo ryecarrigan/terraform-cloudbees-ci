@@ -3,10 +3,9 @@ variable "cidr_block" {
 }
 
 variable "cluster_name" {}
-variable "domain_name" {}
 
 variable "eks_version" {
-  default = "1.20"
+  default = "1.21"
 }
 
 variable "extra_tags" {
@@ -41,4 +40,8 @@ variable "zone_count" {
     condition     = var.zone_count > 0
     error_message = "Zone count must be non-zero and positive."
   }
+}
+
+variable "zone_name" {
+  default = ""
 }
