@@ -21,5 +21,9 @@ terraform {
     kubernetes = {
       version = ">= 2.5.0"
     }
+
+    tls = {
+      version = ">= 3.1.1"
+    }
   }
 }
