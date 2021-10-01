@@ -51,5 +51,5 @@ The Makefile wraps Terraform with a default action of "plan". When you run the f
         ```
     * Create the EKS cluster.
         ```shell
-        make cluster ACTION=apply
+        make eks ACTION=apply
         ```
