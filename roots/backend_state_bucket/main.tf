@@ -1,15 +1,14 @@
-provider "aws" {}
-
 variable "bucket_name" {}
 
 variable "extra_tags" {
-  default = {}
+  default = null
   type    = map(string)
 }
 
-resource "aws_s3_bucket" "state" {
-  acl    = "private"
-  bucket = var.bucket_name
+resource "aws_s3_bucket" "this" {
+  acl           = "private"
+  bucket        = var.bucket_name
+  force_destroy = false
 
   server_side_encryption_configuration {
     rule {
