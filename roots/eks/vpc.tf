@@ -32,4 +32,30 @@ module "eks_vpc" {
   }
 }
 
+resource "aws_security_group" "efs" {
+  description = "Security group for EFS mount targets"
+  name        = "${var.cluster_name}-efs"
+  vpc_id      = module.eks_vpc.vpc_id
+
+  tags = var.extra_tags
+}
+
+resource "aws_security_group_rule" "efs_egress" {
+  from_port                = 2049
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.efs.id
+  source_security_group_id = module.eks_cluster.worker_security_group_id
+  to_port                  = 2049
+  type                     = "egress"
+}
+
+resource "aws_security_group_rule" "efs_ingress" {
+  from_port                = 2049
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.efs.id
+  source_security_group_id = module.eks_cluster.worker_security_group_id
+  to_port                  = 2049
+  type                     = "ingress"
+}
+
 data "aws_availability_zones" "available" {}

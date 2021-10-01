@@ -23,11 +23,39 @@ EOT
   }
 }
 
+resource "kubernetes_storage_class" "storage_class" {
+  depends_on = [aws_efs_mount_target.efs_mount_target, data.http.wait_for_cluster]
+
+  metadata {
+    name = "efs-sc"
+  }
+
+  parameters = {
+    directoryPerms   = "700"
+    fileSystemId     = aws_efs_file_system.efs_file_system.id
+    provisioningMode = "efs-ap"
+  }
+
+  storage_provisioner = "efs.csi.aws.com"
+}
+
 resource "kubernetes_namespace" "ingress_nginx" {
   depends_on = [data.http.wait_for_cluster]
 
   metadata {
     name = var.nginx_namespace
+  }
+}
+
+resource "kubernetes_service_account" "efs_csi_driver" {
+  depends_on = [data.http.wait_for_cluster]
+
+  metadata {
+    name      = "efs-csi-controller-sa"
+    namespace = "kube-system"
+
+    annotations = {"eks.amazonaws.com/role-arn" = aws_iam_role.efs_csi_driver.arn}
+    labels      = {"app.kubernetes.io/name" = "aws-efs-csi-driver"}
   }
 }
 
