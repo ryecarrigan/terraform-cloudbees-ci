@@ -1,5 +1,5 @@
-Persistence:
-  StorageClass: {{ .Values.rwxStorageClass }}
+#Persistence:
+#  StorageClass: {{ .Values.rwxStorageClass }}
 
 OperationsCenter:
   Image:
@@ -13,12 +13,18 @@ OperationsCenter:
   JavaOpts:
     -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true
   ExtraVolumes:
-  - name: configmap-volume
+  - name: oc-configmap
     configMap:
       name: oc-configmap
+  - name: mc-casc-bundle
+    configMap:
+      name: mc-casc-bundle
   ExtraVolumeMounts:
-  - name: configmap-volume
+  - name: oc-configmap
     mountPath: /var/jenkins_config/oc-configmap
+    readOnly: true
+  - name: mc-casc-bundle
+    mountPath: /var/jenkins_home/jcasc-bundles-store/mc-casc-bundle
     readOnly: true
 
 Hibernation:

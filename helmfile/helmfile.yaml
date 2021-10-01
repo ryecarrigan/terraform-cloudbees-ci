@@ -1,6 +1,4 @@
 repositories:
-  - name: autoscaler
-    url: https://kubernetes.github.io/autoscaler
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
   - name: cloudbees
@@ -26,12 +24,6 @@ releases:
     chart: bitnami/mysql
     values:
       - values/mysql.yaml.gotmpl
-  - name: cluster-autoscaler
-    namespace: kube-system
-    chart: autoscaler/cluster-autoscaler
-    version: 9.10.3
-    values:
-      - values/autoscaler.yaml.gotmpl
 
 environments:
   default:

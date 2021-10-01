@@ -19,11 +19,12 @@ server:
   telemetryData:
     enabled: false
   volumesPermissionsInitContainer:
-    enabled: false
+    enabled: true
 
 storage:
   volumes:
     serverPlugins:
+      accessMode: ReadWriteOnce
       storageClass: {{ .Values.rwxStorageClass }}
 
 zookeeper:
