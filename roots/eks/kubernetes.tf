@@ -5,8 +5,8 @@ provider "kubernetes" {
 }
 
 locals {
-  ebs_sc_name = "ebs-sc"
-  efs_sc_name = "efs-sc"
+  ebs_sc_name = "ebs"
+  efs_sc_name = "efs"
 }
 
 resource "kubernetes_config_map" "iam_auth" {
@@ -59,11 +59,19 @@ resource "kubernetes_storage_class" "aws_efs_csi_driver" {
   storage_provisioner = "efs.csi.aws.com"
 }
 
-resource "kubernetes_namespace" "ingress_nginx" {
+resource "kubernetes_service_account" "alb_controller" {
   depends_on = [data.http.wait_for_cluster]
 
   metadata {
-    name = var.nginx_namespace
+    name      = local.alb_controller_name
+    namespace = "kube-system"
+
+    annotations = {"eks.amazonaws.com/role-arn": aws_iam_role.alb_controller.arn}
+
+    labels = {
+      "app.kubernetes.io/component" = "controller"
+      "app.kubernetes.io/name"      = local.alb_controller_name
+    }
   }
 }
 
@@ -95,13 +103,4 @@ data "http" "wait_for_cluster" {
   ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   timeout        = 300
   url            = format("%s/healthz", data.aws_eks_cluster.cluster.endpoint)
-}
-
-data "kubernetes_service" "ingress_controller" {
-  depends_on = [helm_release.ingress_nginx]
-
-  metadata {
-    namespace = var.nginx_namespace
-    name      = "ingress-nginx-controller"
-  }
 }
