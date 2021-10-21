@@ -4,6 +4,11 @@ provider "kubernetes" {
   token                  = data.aws_eks_cluster_auth.auth.token
 }
 
+locals {
+  ebs_sc_name = "ebs-sc"
+  efs_sc_name = "efs-sc"
+}
+
 resource "kubernetes_config_map" "iam_auth" {
   depends_on = [data.http.wait_for_cluster]
 
@@ -23,11 +28,26 @@ EOT
   }
 }
 
-resource "kubernetes_storage_class" "storage_class" {
+resource "kubernetes_storage_class" "aws_ebs_csi_driver" {
+  depends_on = [data.http.wait_for_cluster]
+
+  metadata {
+    name = local.ebs_sc_name
+  }
+
+  parameters = {
+    encrypted = true
+    type      = "gp2"
+  }
+
+  storage_provisioner = "ebs.csi.aws.com"
+}
+
+resource "kubernetes_storage_class" "aws_efs_csi_driver" {
   depends_on = [aws_efs_mount_target.efs_mount_target, data.http.wait_for_cluster]
 
   metadata {
-    name = "efs-sc"
+    name = local.efs_sc_name
   }
 
   parameters = {
@@ -47,20 +67,32 @@ resource "kubernetes_namespace" "ingress_nginx" {
   }
 }
 
+resource "kubernetes_service_account" "ebs_csi_driver" {
+  depends_on = [data.http.wait_for_cluster]
+
+  metadata {
+    name      = local.ebs_app_name
+    namespace = "kube-system"
+
+    annotations = {"eks.amazonaws.com/role-arn": aws_iam_role.ebs_csi_driver.arn}
+    labels      = {"app.kubernetes.io/name": local.ebs_app_name}
+  }
+}
+
 resource "kubernetes_service_account" "efs_csi_driver" {
   depends_on = [data.http.wait_for_cluster]
 
   metadata {
-    name      = "efs-csi-controller-sa"
+    name      = local.efs_app_name
     namespace = "kube-system"
 
-    annotations = {"eks.amazonaws.com/role-arn" = aws_iam_role.efs_csi_driver.arn}
-    labels      = {"app.kubernetes.io/name" = "aws-efs-csi-driver"}
+    annotations = {"eks.amazonaws.com/role-arn": aws_iam_role.efs_csi_driver.arn}
+    labels      = {"app.kubernetes.io/name": local.efs_app_name}
   }
 }
 
 data "http" "wait_for_cluster" {
-  ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
+  ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   timeout        = 300
   url            = format("%s/healthz", data.aws_eks_cluster.cluster.endpoint)
 }
