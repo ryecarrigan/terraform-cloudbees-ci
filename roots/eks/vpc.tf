@@ -47,11 +47,12 @@ resource "aws_acm_certificate" "certificate" {
 
 resource "aws_route53_record" "validation" {
   depends_on = [aws_acm_certificate.certificate]
+  for_each   = {for option in aws_acm_certificate.certificate.domain_validation_options : option.domain_name => option}
 
-  name     = aws_acm_certificate.certificate.domain_validation_options.*.resource_record_name.0
-  records  = [aws_acm_certificate.certificate.domain_validation_options.*.resource_record_value.0]
+  name     = each.value["resource_record_name"]
+  records  = [each.value["resource_record_value"]]
   ttl      = 60
-  type     = aws_acm_certificate.certificate.domain_validation_options.*.resource_record_type.0
+  type     = each.value["resource_record_type"]
   zone_id  = data.aws_route53_zone.domain_name.id
 }
 
