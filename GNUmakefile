@@ -37,6 +37,21 @@ eks-init roots/eks/.terraform/terraform.tfstate:
 			-backend-config="key=$(STATE_KEY)/cluster/terraform.tfstate"
 
 
+.PHONY: sda
+sda: roots/sda
+	$(call check_defined, TF_VAR_cluster_name, name of the EKS cluster)
+	@cd roots/sda && \
+		terraform $(ACTION)
+
+sda-init roots/eks_sda/.terraform/terraform.tfstate:
+	$(call check_defined, BUCKET_NAME, name of the backend state bucket)
+	@cd roots/sda && \
+		terraform init \
+			-reconfigure \
+			-backend-config="bucket=$(BUCKET_NAME)" \
+			-backend-config="key=$(STATE_KEY)/eks_sda/terraform.tfstate"
+
+
 check_defined = \
 		$(strip $(foreach 1,$1, \
 			$(call __check_defined,$1,$(strip $(value 2)))))
