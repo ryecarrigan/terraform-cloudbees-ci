@@ -1,113 +1,26 @@
-provider "aws" {}
-
-locals {
-  account_id  = data.aws_caller_identity.this.account_id
-  ap_arn      = "arn:aws:elasticfilesystem:${local.region_name}:${local.account_id}:access-point/*"
-  ec2_arn     = "arn:aws:ec2:${local.region_name}:${local.account_id}"
-  issuer      = lookup(data.aws_eks_cluster.cluster.identity.0.oidc.0, "issuer")
-  region_name = data.aws_region.this.name
+resource "helm_release" "aws_alb_controller" {
+  chart      = "aws-load-balancer-controller"
+  name       = var.release_name
+  namespace  = var.namespace
+  repository = "https://aws.github.io/eks-charts"
+  values     = [local.alb_controller_values]
+  version    = var.release_version
 }
 
-resource "aws_iam_openid_connect_provider" "oidc" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.cluster.certificates.0.sha1_fingerprint]
-  url             = local.issuer
+resource "kubernetes_service_account" "alb_controller" {
+  metadata {
+    name      = var.service_account_name
+    namespace = var.namespace
 
-  tags = var.extra_tags
-}
-
-resource "aws_iam_role" "alb_controller" {
-  name_prefix = "${var.cluster_name}_alb_controller"
-
-  assume_role_policy = <<EOT
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "${aws_iam_openid_connect_provider.oidc.arn}"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "${trimprefix(local.issuer, "https://")}:sub": "system:serviceaccount:kube-system:${local.alb_controller_name}"
-        }
-      }
+    annotations = {
+      "eks.amazonaws.com/role-arn": aws_iam_role.alb_controller.arn
     }
-  ]
-}
-EOT
 
-  tags = var.extra_tags
-}
-
-resource "aws_iam_role" "ebs_csi_driver" {
-  name_prefix = "${var.cluster_name}_ebs-csi-driver"
-
-  assume_role_policy = <<EOT
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "${aws_iam_openid_connect_provider.oidc.arn}"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "${trimprefix(local.issuer, "https://")}:sub": "system:serviceaccount:kube-system:${local.ebs_app_name}"
-        }
-      }
+    labels = {
+      "app.kubernetes.io/component" = "controller"
+      "app.kubernetes.io/name"      = var.release_name
     }
-  ]
-}
-EOT
-
-  tags = var.extra_tags
-}
-
-resource "aws_iam_role" "efs_csi_driver" {
-  name_prefix = "${var.cluster_name}_efs-csi-driver"
-
-  assume_role_policy = <<EOT
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "${aws_iam_openid_connect_provider.oidc.arn}"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "${trimprefix(local.issuer, "https://")}:sub": "system:serviceaccount:kube-system:${local.efs_app_name}"
-        }
-      }
-    }
-  ]
-}
-
-EOT
-
-  tags = var.extra_tags
-}
-
-resource "aws_iam_role_policy_attachment" "alb_controller" {
-  policy_arn = aws_iam_policy.alb_controller.arn
-  role       = aws_iam_role.alb_controller.name
-}
-
-resource "aws_iam_role_policy_attachment" "ebs_policy_attachment" {
-  policy_arn = aws_iam_policy.ebs_csi_driver.arn
-  role       = aws_iam_role.ebs_csi_driver.name
-}
-
-resource "aws_iam_role_policy_attachment" "efs_csi_driver" {
-  policy_arn = aws_iam_policy.efs_csi_driver.arn
-  role       = aws_iam_role.efs_csi_driver.name
+  }
 }
 
 resource "aws_iam_policy" "alb_controller" {
@@ -333,109 +246,23 @@ resource "aws_iam_policy" "alb_controller" {
 EOT
 }
 
-resource "aws_iam_policy" "ebs_csi_driver" {
-  name = "${var.cluster_name}_ebs-csi-driver"
-  policy = <<EOT
+
+resource "aws_iam_role" "alb_controller" {
+  name_prefix = "${var.cluster_name}_alb_controller"
+
+  assume_role_policy = <<EOT
 {
   "Version": "2012-10-17",
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "ec2:CreateSnapshot",
-        "ec2:AttachVolume",
-        "ec2:DetachVolume",
-        "ec2:ModifyVolume",
-        "ec2:DescribeAvailabilityZones",
-        "ec2:DescribeInstances",
-        "ec2:DescribeSnapshots",
-        "ec2:DescribeTags",
-        "ec2:DescribeVolumes",
-        "ec2:DescribeVolumesModifications"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:CreateTags"],
-      "Resource": [
-        "${local.ec2_arn}:volume",
-        "${local.ec2_arn}:snapshot"
-      ],
+      "Principal": {
+        "Federated": "${var.oidc_provider_arn}"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "ec2:CreateAction": [
-            "CreateVolume",
-            "CreateSnapshot"
-          ]
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:DeleteTags"],
-      "Resource": [
-        "${local.ec2_arn}:volume/*",
-        "${local.ec2_arn}:snapshot/*"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:CreateVolume"],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/ebs.csi.aws.com/cluster": "true"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:CreateVolume"],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/CSIVolumeName": "*"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:DeleteVolume"],
-      "Resource": "${local.ec2_arn}:volume/*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/CSIVolumeName": "*"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:DeleteVolume"],
-      "Resource": "${local.ec2_arn}:volume/*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/ebs.csi.aws.com/cluster": "true"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:DeleteSnapshot"],
-      "Resource": "${local.ec2_arn}:snapshot/*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/CSIVolumeSnapshotName": "*"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:DeleteSnapshot"],
-      "Resource": "${local.ec2_arn}:snapshot/*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/ebs.csi.aws.com/cluster": "true"
+          "${var.oidc_issuer}:sub": "system:serviceaccount:${var.namespace}:${var.service_account_name}"
         }
       }
     }
@@ -446,51 +273,50 @@ EOT
   tags = var.extra_tags
 }
 
-resource "aws_iam_policy" "efs_csi_driver" {
-  name = "${var.cluster_name}_efs-csi-driver"
-  policy = <<EOT
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": ["elasticfilesystem:DescribeAccessPoints"],
-      "Resource": "${local.ap_arn}"
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["elasticfilesystem:DescribeFileSystems"],
-      "Resource": "${aws_efs_file_system.efs_file_system.arn}"
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["elasticfilesystem:CreateAccessPoint"],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/efs.csi.aws.com/cluster": "true"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": "elasticfilesystem:DeleteAccessPoint",
-      "Resource": "${local.ap_arn}",
-      "Condition": {
-        "StringEquals": {
-          "aws:ResourceTag/efs.csi.aws.com/cluster": "true"
-        }
-      }
-    }
-  ]
+resource "aws_iam_role_policy_attachment" "alb_controller" {
+  policy_arn = aws_iam_policy.alb_controller.arn
+  role       = aws_iam_role.alb_controller.name
 }
+
+data "aws_region" "this" {}
+
+locals {
+  alb_controller_values = <<EOT
+clusterName: ${var.cluster_name}
+image:
+  repository: "${local.eks_addon_repository}/amazon/aws-load-balancer-controller"
+serviceAccount:
+  create: false
+  name: ${kubernetes_service_account.alb_controller.metadata.0.name}
 EOT
 
-  tags = var.extra_tags
-}
-
-data "aws_caller_identity" "this" {}
-
-data "tls_certificate" "cluster" {
-  url = local.issuer
+  aws_region_name = data.aws_region.this.name
+  eks_addon_repository = lookup(local.eks_addon_repository_map, local.aws_region_name)
+  eks_addon_repository_map = {
+    "af-south-1"     = "877085696533.dkr.ecr.af-south-1.amazonaws.com"
+    "ap-east-1"      = "800184023465.dkr.ecr.ap-east-1.amazonaws.com"
+    "ap-northeast-1" = "602401143452.dkr.ecr.ap-northeast-1.amazonaws.com"
+    "ap-northeast-2" = "602401143452.dkr.ecr.ap-northeast-2.amazonaws.com"
+    "ap-northeast-3" = "602401143452.dkr.ecr.ap-northeast-3.amazonaws.com"
+    "ap-south-1"     = "602401143452.dkr.ecr.ap-south-1.amazonaws.com"
+    "ap-southeast-1" = "602401143452.dkr.ecr.ap-southeast-1.amazonaws.com"
+    "ap-southeast-2" = "602401143452.dkr.ecr.ap-southeast-2.amazonaws.com"
+    "ca-central-1"   = "602401143452.dkr.ecr.ca-central-1.amazonaws.com"
+    "cn-north-1"     = "918309763551.dkr.ecr.cn-north-1.amazonaws.com.cn"
+    "cn-northwest-1" = "961992271922.dkr.ecr.cn-northwest-1.amazonaws.com.cn"
+    "eu-central-1"   = "602401143452.dkr.ecr.eu-central-1.amazonaws.com"
+    "eu-north-1"     = "602401143452.dkr.ecr.eu-north-1.amazonaws.com"
+    "eu-south-1"     = "590381155156.dkr.ecr.eu-south-1.amazonaws.com"
+    "eu-west-1"      = "602401143452.dkr.ecr.eu-west-1.amazonaws.com"
+    "eu-west-2"      = "602401143452.dkr.ecr.eu-west-2.amazonaws.com"
+    "eu-west-3"      = "602401143452.dkr.ecr.eu-west-3.amazonaws.com"
+    "me-south-1"     = "558608220178.dkr.ecr.me-south-1.amazonaws.com"
+    "sa-east-1"      = "602401143452.dkr.ecr.sa-east-1.amazonaws.com"
+    "us-east-1"      = "602401143452.dkr.ecr.us-east-1.amazonaws.com"
+    "us-east-2"      = "602401143452.dkr.ecr.us-east-2.amazonaws.com"
+    "us-gov-east-1"  = "151742754352.dkr.ecr.us-gov-east-1.amazonaws.com"
+    "us-gov-west-1"  = "013241004608.dkr.ecr.us-gov-west-1.amazonaws.com"
+    "us-west-1"      = "602401143452.dkr.ecr.us-west-1.amazonaws.com"
+    "us-west-2"      = "602401143452.dkr.ecr.us-west-2.amazonaws.com"
+  }
 }

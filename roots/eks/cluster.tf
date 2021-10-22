@@ -26,10 +26,34 @@ module "eks_cluster" {
   ]
 }
 
+resource "aws_iam_openid_connect_provider" "oidc" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.cluster.certificates.0.sha1_fingerprint]
+  url             = local.oidc_issuer_url
+
+  tags = var.extra_tags
+}
+
 data "aws_eks_cluster" "cluster" {
   name = module.eks_cluster.cluster_id
 }
 
 data "aws_eks_cluster_auth" "auth" {
   name = module.eks_cluster.cluster_id
+}
+
+data "http" "wait_for_cluster" {
+  ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+  timeout        = 300
+  url            = "${data.aws_eks_cluster.cluster.endpoint}/healthz"
+}
+
+data "tls_certificate" "cluster" {
+  url = local.oidc_issuer_url
+}
+
+locals {
+  oidc_issuer       = trimprefix(local.oidc_issuer_url, "https://")
+  oidc_issuer_url   = data.aws_eks_cluster.cluster.identity.0.oidc.0["issuer"]
+  oidc_provider_arn = aws_iam_openid_connect_provider.oidc.arn
 }
