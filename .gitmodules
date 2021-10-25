@@ -1,0 +1,3 @@
+[submodule "cbci-casc-bundles"]
+	path = ci-casc-bundles
+	url = git@github.com:ryecarrigan/cbci-casc-bundles.git
