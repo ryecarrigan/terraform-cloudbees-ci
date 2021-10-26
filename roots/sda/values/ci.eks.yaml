@@ -48,4 +48,4 @@ OperationsCenter:
       mountPath: ${oc_secret_path}
 
 Hibernation:
-  Enabled: false
+  Enabled: true
