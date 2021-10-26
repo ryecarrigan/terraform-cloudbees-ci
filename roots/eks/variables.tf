@@ -2,6 +2,7 @@ variable "cidr_block" {
   default = "10.0.0.0/16"
 }
 
+variable "certificate_domain_name" {}
 variable "cluster_name" {}
 
 variable "eks_version" {
@@ -13,8 +14,6 @@ variable "extra_tags" {
   type    = map(string)
 }
 
-variable "host_name" {}
-
 variable "instance_types" {
   default = ["m5.xlarge", "m5a.xlarge", "m4.xlarge"]
   type    = set(string)
@@ -22,10 +21,6 @@ variable "instance_types" {
 
 variable "key_name" {
   default = ""
-}
-
-variable "nginx_namespace" {
-  default = "nginx-ingress"
 }
 
 variable "ssh_cidr" {

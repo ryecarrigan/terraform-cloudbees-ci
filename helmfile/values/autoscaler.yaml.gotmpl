@@ -1,9 +1,0 @@
-rbac:
-  create: true
-
-cloudProvider: {{ .Values.cluster.provider }}
-{{ if eq .Values.cluster.provider "aws" }}awsRegion: {{ .Values.cluster.region }}{{ end }}
-
-autoDiscovery:
-  clusterName: {{ .Values.cluster.name }}
-  enabled: true

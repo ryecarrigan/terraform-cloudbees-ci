@@ -5,3 +5,4 @@
 .terraform.lock.hcl
 *.tfstate*
 *.tfvars
+secrets.yaml
