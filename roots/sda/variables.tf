@@ -2,6 +2,11 @@ variable "ci_namespace" {
   default = "cloudbees-ci"
 }
 
+variable "manage_namespace" {
+  type    = bool
+  default = true
+}
+
 variable "oc_configmap_name" {
   default = "oc-casc-bundle"
 }

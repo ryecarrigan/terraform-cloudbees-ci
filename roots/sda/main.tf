@@ -19,6 +19,8 @@ resource "helm_release" "cloudbees_ci" {
 }
 
 resource "kubernetes_namespace" "cloudbees_ci" {
+  count = var.manage_namespace ? 1 : 0
+
   metadata {
     name = var.ci_namespace
   }
