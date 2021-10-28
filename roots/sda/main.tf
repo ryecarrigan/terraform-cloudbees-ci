@@ -14,8 +14,9 @@ resource "helm_release" "cloudbees_ci" {
   chart      = "cloudbees-core"
   name       = "cloudbees-ci"
   namespace  = var.ci_namespace
-  repository = "https://charts.cloudbees.com/public/cloudbees"
+  repository = var.chart_repository
   values     = [lookup(local.values_files, var.platform)]
+  version    = var.chart_version
 }
 
 resource "kubernetes_namespace" "cloudbees_ci" {
