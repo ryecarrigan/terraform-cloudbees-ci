@@ -8,10 +8,10 @@ OperationsCenter:
   Resources:
     Limits:
       Cpu: 2
-      Memory: 3G
+      Memory: 4G
     Requests:
       Cpu: 2
-      Memory: 3G
+      Memory: 4G
   Ingress:
     Class: alb
     Annotations:
@@ -29,8 +29,10 @@ OperationsCenter:
       def log = java.util.logging.Logger.getLogger('bundles-sync.groovy')
       def job = jenkins.model.Jenkins.get().getItem('casc-bundles-update')
       if (job) {
+        log.info('Performing re-save on bundle sync job')
+        job.save()
+        log.info('Scheduling bundle sync job')
         def run = jenkins.model.Jenkins.get().getQueue().schedule(job)
-        log.info('Bundle sync job scheduled')
         run.future.waitForStart()
         log.info('Bundle sync job starting')
         run.future.get()
@@ -48,4 +50,5 @@ OperationsCenter:
       mountPath: ${oc_secret_path}
 
 Hibernation:
-  Enabled: true
+  Enabled: false
+
