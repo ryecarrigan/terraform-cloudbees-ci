@@ -1,3 +1,7 @@
+variable "agent_image" {
+  default = ""
+}
+
 variable "chart_repository" {
   default = "https://charts.cloudbees.com/public/cloudbees"
 }
@@ -10,6 +14,10 @@ variable "ci_namespace" {
   default = "cloudbees-ci"
 }
 
+variable "controller_image" {
+  default = ""
+}
+
 variable "manage_namespace" {
   type    = bool
   default = true
@@ -17,6 +25,10 @@ variable "manage_namespace" {
 
 variable "oc_configmap_name" {
   default = "oc-casc-bundle"
+}
+
+variable "oc_image" {
+  default = ""
 }
 
 variable "oc_secret_name" {

@@ -37,13 +37,24 @@ eks-init roots/eks/.terraform/terraform.tfstate:
 			-backend-config="key=$(STATE_KEY)/cluster/terraform.tfstate"
 
 
+.PHONY: eks-context
+eks-context:
+	$(call check_defined, CLUSTER_NAME, name of the EKS cluster)
+	$(call check_defined, CI_NAMESPACE, namespace for CloudBees CI)
+	aws eks update-kubeconfig --name $(CLUSTER_NAME)
+	@cd roots/eks && \
+		kubectl config set-context `terraform output -raw cluster_arn` --namespace=$(CI_NAMESPACE)
+	@cd roots/eks && \
+		kubectl config use-context `terraform output -raw cluster_arn`
+
+
 .PHONY: sda
 sda: roots/sda
 	$(call check_defined, TF_VAR_cluster_name, name of the EKS cluster)
 	@cd roots/sda && \
 		terraform $(ACTION)
 
-sda-init roots/eks_sda/.terraform/terraform.tfstate:
+sda-init roots/sda/.terraform/terraform.tfstate:
 	$(call check_defined, BUCKET_NAME, name of the backend state bucket)
 	@cd roots/sda && \
 		terraform init \

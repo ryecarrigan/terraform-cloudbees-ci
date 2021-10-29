@@ -17,6 +17,15 @@ resource "helm_release" "cloudbees_ci" {
   repository = var.chart_repository
   values     = [lookup(local.values_files, var.platform)]
   version    = var.chart_version
+
+  # Dynamically set values for Docker image overrides if the vars are set
+  dynamic "set" {
+    for_each = {for k, v in local.image_value_keys: k => v if v != ""}
+    content {
+      name  = set.key
+      value = set.value
+    }
+  }
 }
 
 resource "kubernetes_namespace" "cloudbees_ci" {
@@ -63,6 +72,12 @@ data "template_file" "ci_eks" {
 }
 
 locals {
+  image_value_keys = {
+    "OperationsCenter.Image.dockerImage" = var.oc_image
+    "Master.Image.dockerImage"           = var.controller_image
+    "Agents.Image.dockerImage"           = var.agent_image
+  }
+
   oc_bundle_dir = "${path.module}/oc-casc-bundle"
   secrets_file = "${path.module}/${var.secrets_file}"
   values_files = {
