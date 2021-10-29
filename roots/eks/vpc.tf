@@ -1,4 +1,4 @@
-module "eks_vpc" {
+module "vpc" {
   depends_on = [data.aws_availability_zones.available]
   source     = "terraform-aws-modules/vpc/aws"
   version    = "3.7.0"
@@ -26,14 +26,14 @@ module "eks_vpc" {
 }
 
 module "bastion" {
-  depends_on = [module.eks_vpc]
+  depends_on = [module.vpc]
   source     = "../../modules/aws-bastion"
 
   resource_prefix          = var.cluster_name
-  source_security_group_id = module.eks_cluster.worker_security_group_id
+  source_security_group_id = module.cluster.worker_security_group_id
   ssh_cidr_blocks          = [var.ssh_cidr]
-  subnet_id                = module.eks_vpc.public_subnets.0
-  vpc_id                   = module.eks_vpc.vpc_id
+  subnet_id                = module.vpc.public_subnets.0
+  vpc_id                   = module.vpc.vpc_id
 }
 
 resource "aws_acm_certificate" "certificate" {

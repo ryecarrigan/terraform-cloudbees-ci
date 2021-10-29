@@ -1,16 +1,16 @@
-module "eks_cluster" {
-  depends_on = [module.eks_vpc]
+module "cluster" {
+  depends_on = [module.vpc]
   source     = "terraform-aws-modules/eks/aws"
   version    = "17.20.0"
 
   cluster_name     = var.cluster_name
   cluster_version  = var.eks_version
   manage_aws_auth  = false
-  subnets          = module.eks_vpc.private_subnets
-  vpc_id           = module.eks_vpc.vpc_id
+  subnets          = module.vpc.private_subnets
+  vpc_id           = module.vpc.vpc_id
   write_kubeconfig = false
 
-  worker_groups_launch_template = [for subnet in module.eks_vpc.private_subnets :
+  worker_groups_launch_template = [for subnet in module.vpc.private_subnets :
     {
       name                     = subnet
       override_instance_types  = var.instance_types
@@ -35,11 +35,11 @@ resource "aws_iam_openid_connect_provider" "oidc" {
 }
 
 data "aws_eks_cluster" "cluster" {
-  name = module.eks_cluster.cluster_id
+  name = module.cluster.cluster_id
 }
 
 data "aws_eks_cluster_auth" "auth" {
-  name = module.eks_cluster.cluster_id
+  name = module.cluster.cluster_id
 }
 
 data "http" "wait_for_cluster" {

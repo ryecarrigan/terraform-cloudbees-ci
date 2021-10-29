@@ -39,9 +39,9 @@ module "efs_driver" {
   cluster_name             = var.cluster_name
   oidc_issuer              = local.oidc_issuer
   oidc_provider_arn        = local.oidc_provider_arn
-  private_subnet_ids       = module.eks_vpc.private_subnets
-  source_security_group_id = module.eks_cluster.worker_security_group_id
-  vpc_id                   = module.eks_vpc.vpc_id
+  private_subnet_ids       = module.vpc.private_subnets
+  source_security_group_id = module.cluster.worker_security_group_id
+  vpc_id                   = module.vpc.vpc_id
 }
 
 module "external_dns" {
@@ -65,7 +65,7 @@ resource "kubernetes_config_map" "iam_auth" {
 
   data = {
     mapRoles = <<EOT
-- rolearn: ${module.eks_cluster.worker_iam_role_arn}
+- rolearn: ${module.cluster.worker_iam_role_arn}
   username: system:node:{{EC2PrivateDNSName}}
   groups:
     - system:bootstrappers
