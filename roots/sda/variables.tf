@@ -18,6 +18,13 @@ variable "controller_image" {
   default = ""
 }
 
+variable "domain_name" {}
+
+variable "hibernation_enabled" {
+  type    = bool
+  default = false
+}
+
 variable "manage_namespace" {
   type    = bool
   default = true
@@ -39,12 +46,16 @@ variable "oc_secret_path" {
   default = "/var/run/secrets/cjoc"
 }
 
-variable "cluster_name" {}
-variable "host_name" {}
 variable "platform" {}
+
 variable "secrets_file" {
   default = "values/secrets.yaml"
 }
 
-variable "storage_class" {}
-variable "zone_name" {}
+variable "storage_class" {
+  default = ""
+}
+
+variable "subdomain" {
+  default = ""
+}

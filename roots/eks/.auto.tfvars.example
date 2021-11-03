@@ -1,0 +1,15 @@
+# Required vars
+#domain_name =
+
+# Optional vars (default will be used if not set)
+#aws_profile =
+#aws_region =
+#cidr_block =
+#cluster_name =
+#eks_version =
+#extra_tags =
+#instance_types =
+#key_name =
+#ssh_cidr =
+#subdomain =
+#zone_count =

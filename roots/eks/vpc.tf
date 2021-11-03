@@ -37,7 +37,7 @@ module "bastion" {
 }
 
 resource "aws_acm_certificate" "certificate" {
-  domain_name       = var.certificate_domain_name
+  domain_name       = length(var.subdomain) > 0 ? "${var.subdomain}.${var.domain_name}" : var.domain_name
   validation_method = "DNS"
 
   lifecycle {
@@ -59,5 +59,5 @@ resource "aws_route53_record" "validation" {
 data "aws_availability_zones" "available" {}
 
 data "aws_route53_zone" "domain_name" {
-  name = length(var.zone_name) > 0 ? var.zone_name : var.certificate_domain_name
+  name = var.domain_name
 }

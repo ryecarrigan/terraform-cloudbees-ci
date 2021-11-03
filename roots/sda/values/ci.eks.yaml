@@ -1,6 +1,3 @@
-Persistence:
-  StorageClass: ${storage_class}
-
 OperationsCenter:
   Platform: eks
   HostName: ${host_name}
@@ -49,5 +46,3 @@ OperationsCenter:
     - name: ${oc_secret_name}
       mountPath: ${oc_secret_path}
 
-Hibernation:
-  Enabled: false

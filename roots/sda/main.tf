@@ -1,13 +1,3 @@
-provider "kubernetes" {
-  config_path = "~/.kube/config"
-}
-
-provider "helm" {
-  kubernetes {
-    config_path = "~/.kube/config"
-  }
-}
-
 resource "helm_release" "cloudbees_ci" {
   depends_on = [kubernetes_config_map.oc_casc_bundle, kubernetes_secret.oc_secrets]
 
@@ -18,9 +8,9 @@ resource "helm_release" "cloudbees_ci" {
   values     = [lookup(local.values_files, var.platform)]
   version    = var.chart_version
 
-  # Dynamically set values for Docker image overrides if the vars are set
+  # Dynamically set values if the associated vars are set
   dynamic "set" {
-    for_each = {for k, v in local.image_value_keys: k => v if v != ""}
+    for_each = {for k, v in local.optional_set_values: k => v if v != ""}
     content {
       name  = set.key
       value = set.value
@@ -63,19 +53,20 @@ data "template_file" "ci_eks" {
   template = file("${path.module}/values/ci.eks.yaml")
 
   vars = {
-    host_name         = var.host_name
+    host_name         = length(var.subdomain) > 0 ? "${var.subdomain}.${var.domain_name}" : var.domain_name
     oc_configmap_name = var.oc_configmap_name
     oc_secret_name    = var.oc_secret_name
     oc_secret_path    = var.oc_secret_path
-    storage_class     = var.storage_class != "" ? var.storage_class : "null"
   }
 }
 
 locals {
-  image_value_keys = {
+  optional_set_values = {
     "OperationsCenter.Image.dockerImage" = var.oc_image
     "Master.Image.dockerImage"           = var.controller_image
     "Agents.Image.dockerImage"           = var.agent_image
+    "Hibernation.Enabled"                = var.hibernation_enabled
+    "Persistence.StorageClass"           = var.storage_class
   }
 
   oc_bundle_dir = "${path.module}/oc-casc-bundle"

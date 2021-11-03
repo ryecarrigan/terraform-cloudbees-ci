@@ -1,16 +1,27 @@
+variable "aws_profile" {
+  default = null
+}
+
+variable "aws_region" {
+  default = "us-east-1"
+}
+
 variable "cidr_block" {
   default = "10.0.0.0/16"
 }
 
-variable "certificate_domain_name" {}
-variable "cluster_name" {}
+variable "cluster_name" {
+  default = "terraform-cloudbees-ci"
+}
+
+variable "domain_name" {}
 
 variable "eks_version" {
   default = "1.21"
 }
 
 variable "extra_tags" {
-  default = null
+  default = {}
   type    = map(string)
 }
 
@@ -27,6 +38,10 @@ variable "ssh_cidr" {
   default = "0.0.0.0/32"
 }
 
+variable "subdomain" {
+  default = ""
+}
+
 variable "zone_count" {
   default = 3
   type    = number
@@ -35,8 +50,4 @@ variable "zone_count" {
     condition     = var.zone_count > 0
     error_message = "Zone count must be non-zero and positive."
   }
-}
-
-variable "zone_name" {
-  default = ""
 }

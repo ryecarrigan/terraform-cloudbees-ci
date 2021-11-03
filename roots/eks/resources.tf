@@ -1,17 +1,3 @@
-provider "kubernetes" {
-  host                   = data.aws_eks_cluster.cluster.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
-  token                  = data.aws_eks_cluster_auth.auth.token
-}
-
-provider "helm" {
-  kubernetes {
-    host                   = data.aws_eks_cluster.cluster.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
-    token                  = data.aws_eks_cluster_auth.auth.token
-  }
-}
-
 module "alb_controller" {
   depends_on = [data.http.wait_for_cluster]
   source     = "../../modules/alb-controller"
@@ -37,6 +23,7 @@ module "efs_driver" {
   source     = "../../modules/aws-efs-csi-driver"
 
   cluster_name             = var.cluster_name
+  extra_tags               = var.extra_tags
   oidc_issuer              = local.oidc_issuer
   oidc_provider_arn        = local.oidc_provider_arn
   private_subnet_ids       = module.vpc.private_subnets
