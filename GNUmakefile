@@ -25,8 +25,8 @@ eks-create:
 
 
 eks-destroy:
-	make eks ACTION="destroy -auto-approve"
 	make sda ACTION="destroy -auto-approve"
+	make eks ACTION="destroy -auto-approve"
 
 
 .PHONY: sda
