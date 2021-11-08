@@ -6,6 +6,9 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
+variable "cd_subdomain" {}
+variable "ci_subdomain" {}
+
 variable "cidr_block" {
   default = "10.0.0.0/16"
 }
@@ -36,10 +39,6 @@ variable "key_name" {
 
 variable "ssh_cidr" {
   default = "0.0.0.0/32"
-}
-
-variable "subdomain" {
-  default = ""
 }
 
 variable "zone_count" {

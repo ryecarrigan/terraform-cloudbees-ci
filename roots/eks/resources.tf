@@ -1,3 +1,17 @@
+module "cd_acm_cert" {
+  source = "../../modules/acm-certificate"
+
+  domain_name = var.domain_name
+  subdomain   = var.cd_subdomain
+}
+
+module "ci_acm_cert" {
+  source = "../../modules/acm-certificate"
+
+  domain_name = var.domain_name
+  subdomain   = var.ci_subdomain
+}
+
 module "alb_controller" {
   depends_on = [data.http.wait_for_cluster]
   source     = "../../modules/alb-controller"
@@ -42,6 +56,13 @@ module "external_dns" {
   route53_zone_id   = data.aws_route53_zone.domain_name.id
 }
 
+module "ingress_nginx" {
+  depends_on = [data.http.wait_for_cluster]
+  source     = "../../modules/ingress-nginx"
+
+  acm_certificate_arn = module.cd_acm_cert.certificate_arn
+}
+
 resource "kubernetes_config_map" "iam_auth" {
   depends_on = [data.http.wait_for_cluster]
 
@@ -59,4 +80,8 @@ resource "kubernetes_config_map" "iam_auth" {
     - system:nodes
 EOT
   }
+}
+
+data "aws_route53_zone" "domain_name" {
+  name = var.domain_name
 }

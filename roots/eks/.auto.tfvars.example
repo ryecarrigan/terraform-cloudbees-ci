@@ -4,6 +4,8 @@
 # Optional vars (default will be used if not set)
 #aws_profile =
 #aws_region =
+#cd_subdomain =
+#ci_subdomain =
 #cidr_block =
 #cluster_name =
 #eks_version =
@@ -11,5 +13,4 @@
 #instance_types =
 #key_name =
 #ssh_cidr =
-#subdomain =
 #zone_count =
