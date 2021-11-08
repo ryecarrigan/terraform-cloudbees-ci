@@ -1,61 +1,54 @@
-variable "agent_image" {
+variable "cd_acm_certificate_arn" {
   default = ""
+}
+
+variable "cd_admin_password" {}
+variable "cd_host_name" {}
+variable "cd_license_file" {
+  default = "values/license.xml"
+}
+
+variable "cd_namespace" {
+  default = "cloudbees-cd"
 }
 
 variable "chart_repository" {
   default = "https://charts.cloudbees.com/public/cloudbees"
 }
 
-variable "chart_version" {
-  default = "3.36.4"
-}
+variable "ci_host_name" {}
 
 variable "ci_namespace" {
   default = "cloudbees-ci"
 }
 
-variable "controller_image" {
-  default = ""
-}
-
 variable "domain_name" {}
 
-variable "hibernation_enabled" {
+variable "install_mysql" {
   type    = bool
   default = false
 }
 
-variable "manage_namespace" {
-  type    = bool
-  default = true
+variable "mysql_database" {
+  default = "flowdb"
+}
+
+variable "mysql_password" {}
+
+variable "mysql_root_password" {
+  default = ""
+}
+
+variable "mysql_user" {
+  default = "flow"
 }
 
 variable "oc_configmap_name" {
   default = "oc-casc-bundle"
 }
 
-variable "oc_image" {
-  default = ""
-}
-
-variable "oc_secret_name" {
-  default = "oc-secrets"
-}
-
-variable "oc_secret_path" {
-  default = "/var/run/secrets/cjoc"
-}
-
 variable "platform" {}
 
 variable "secrets_file" {
   default = "values/secrets.yaml"
-}
-
-variable "storage_class" {
-  default = ""
-}
-
-variable "subdomain" {
-  default = ""
 }
