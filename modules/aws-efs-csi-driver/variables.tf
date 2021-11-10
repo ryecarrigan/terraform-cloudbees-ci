@@ -1,3 +1,5 @@
+variable "aws_region" {}
+variable "aws_account_id" {}
 variable "cluster_name" {}
 
 variable "extra_tags" {

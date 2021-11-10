@@ -18,6 +18,8 @@ variable "namespace" {
   default = "cloudbees-cd"
 }
 
+variable "ci_host_name" {}
+
 variable "platform" {
   validation {
     condition     = contains(["eks"], var.platform)

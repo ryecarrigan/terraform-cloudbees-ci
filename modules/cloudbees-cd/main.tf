@@ -71,6 +71,16 @@ resource "helm_release" "this" {
   }
 
   set {
+    name  = "server.extraEnvs[0].name"
+    value = "CBF_OC_URL"
+  }
+
+  set {
+    name  = "server.extraEnvs[0].value"
+    value = "${var.ci_host_name}/cjoc"
+  }
+
+  set {
     name  = "storage.volumes.serverPlugins.storageClass"
     value = var.rwx_storage_class
   }

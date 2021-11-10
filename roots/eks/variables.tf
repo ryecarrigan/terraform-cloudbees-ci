@@ -6,6 +6,11 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
+variable "bastion_enabled" {
+  default = false
+  type    = bool
+}
+
 variable "cd_subdomain" {}
 variable "ci_subdomain" {}
 

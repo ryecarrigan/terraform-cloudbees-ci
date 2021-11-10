@@ -20,7 +20,7 @@ module "cluster" {
       instance_refresh_enabled = true
       key_name                 = var.key_name
       subnets                  = [subnet]
-      tags                     = [for k, v in var.extra_tags : {key = k, propagate_at_launch = true, value = v}]
+      tags                     = [for k, v in local.worker_group_tags : {key = k, propagate_at_launch = true, value = v}]
       update_default_version   = true
     }
   ]
@@ -53,7 +53,13 @@ data "tls_certificate" "cluster" {
 }
 
 locals {
+  autoscaler_tags   = {
+    "k8s.io/cluster-autoscaler/enabled"             = true
+    "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
+  }
+
   oidc_issuer       = trimprefix(local.oidc_issuer_url, "https://")
   oidc_issuer_url   = data.aws_eks_cluster.cluster.identity.0.oidc.0["issuer"]
   oidc_provider_arn = aws_iam_openid_connect_provider.oidc.arn
+  worker_group_tags = merge(local.autoscaler_tags, var.extra_tags)
 }

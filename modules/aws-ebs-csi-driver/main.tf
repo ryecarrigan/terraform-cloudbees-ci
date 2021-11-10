@@ -181,16 +181,10 @@ resource "aws_iam_role_policy_attachment" "ebs_policy_attachment" {
   role       = aws_iam_role.this.name
 }
 
-data "aws_region" "this" {}
-data "aws_caller_identity" "this" {}
-
 locals {
-  aws_account_id  = data.aws_caller_identity.this.account_id
-  aws_region_name = data.aws_region.this.name
+  ec2_arn_prefix = "arn:aws:ec2:${var.aws_region}:${var.aws_account_id}"
 
-  ec2_arn_prefix = "arn:aws:ec2:${local.aws_region_name}:${local.aws_account_id}"
-
-  eks_addon_repository = lookup(local.eks_addon_repository_map, local.aws_region_name)
+  eks_addon_repository = lookup(local.eks_addon_repository_map, var.aws_region)
   eks_addon_repository_map = {
     "af-south-1"     = "877085696533.dkr.ecr.af-south-1.amazonaws.com"
     "ap-east-1"      = "800184023465.dkr.ecr.ap-east-1.amazonaws.com"

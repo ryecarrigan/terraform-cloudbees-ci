@@ -278,8 +278,6 @@ resource "aws_iam_role_policy_attachment" "alb_controller" {
   role       = aws_iam_role.alb_controller.name
 }
 
-data "aws_region" "this" {}
-
 locals {
   alb_controller_values = <<EOT
 clusterName: ${var.cluster_name}
@@ -290,8 +288,7 @@ serviceAccount:
   name: ${kubernetes_service_account.alb_controller.metadata.0.name}
 EOT
 
-  aws_region_name = data.aws_region.this.name
-  eks_addon_repository = lookup(local.eks_addon_repository_map, local.aws_region_name)
+  eks_addon_repository = lookup(local.eks_addon_repository_map, var.aws_region)
   eks_addon_repository_map = {
     "af-south-1"     = "877085696533.dkr.ecr.af-south-1.amazonaws.com"
     "ap-east-1"      = "800184023465.dkr.ecr.ap-east-1.amazonaws.com"

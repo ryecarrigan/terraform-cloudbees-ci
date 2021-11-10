@@ -26,6 +26,7 @@ module "vpc" {
 }
 
 module "bastion" {
+  count      = var.bastion_enabled ? 1 : 0
   depends_on = [module.vpc]
   source     = "../../modules/aws-bastion"
 
@@ -37,4 +38,3 @@ module "bastion" {
 }
 
 data "aws_availability_zones" "available" {}
-
