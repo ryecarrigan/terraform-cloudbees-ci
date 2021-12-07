@@ -3,6 +3,7 @@ OperationsCenter:
   CasC:
     Enabled: true
   JavaOpts:
+    -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.enablePluginCatalogInOC=true
     -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true
   ExtraGroovyConfiguration:
     bundles-sync.groovy: |
