@@ -27,7 +27,7 @@ resource "helm_release" "this" {
   name       = var.release_name
   namespace  = local.namespace_name
   repository = "https://charts.cloudbees.com/public/cloudbees"
-  values     = [file("${path.module}/values.yaml"), local.ingress_annotations]
+  values     = [file("${path.module}/values.yaml"), local.extra_envs, local.ingress_annotations]
   version    = var.chart_version
 
   set {
@@ -71,22 +71,21 @@ resource "helm_release" "this" {
   }
 
   set {
-    name  = "server.extraEnvs[0].name"
-    value = "CBF_OC_URL"
-  }
-
-  set {
-    name  = "server.extraEnvs[0].value"
-    value = "${var.ci_host_name}/cjoc"
-  }
-
-  set {
     name  = "storage.volumes.serverPlugins.storageClass"
     value = var.rwx_storage_class
   }
 }
 
 locals {
+  extra_envs = <<EOT
+server:
+  extraEnvs:
+  - name: CBF_OC_URL
+    value: "${var.ci_host_name}/cjoc"
+  - name: CBF_SERVER_SDA_MODE
+    value: "true"
+EOT
+
   ingress_annotations = <<EOT
 ingress:
   annotations:
