@@ -78,25 +78,6 @@ module "ingress_nginx" {
   acm_certificate_arn = module.cd_acm_cert.certificate_arn
 }
 
-resource "kubernetes_config_map" "iam_auth" {
-  depends_on = [data.http.wait_for_cluster]
-
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = <<EOT
-- rolearn: ${module.cluster.worker_iam_role_arn}
-  username: system:node:{{EC2PrivateDNSName}}
-  groups:
-    - system:bootstrappers
-    - system:nodes
-EOT
-  }
-}
-
 data "aws_caller_identity" "self" {}
 data "aws_region" "this" {}
 

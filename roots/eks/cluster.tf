@@ -5,7 +5,8 @@ module "cluster" {
 
   cluster_name     = var.cluster_name
   cluster_version  = var.eks_version
-  manage_aws_auth  = false
+  enable_irsa      = true
+  manage_aws_auth  = true
   subnets          = module.vpc.private_subnets
   vpc_id           = module.vpc.vpc_id
   write_kubeconfig = false
@@ -26,40 +27,23 @@ module "cluster" {
   ]
 }
 
-resource "aws_iam_openid_connect_provider" "oidc" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.cluster.certificates.0.sha1_fingerprint]
-  url             = local.oidc_issuer_url
-
-  tags = var.extra_tags
-}
-
-data "aws_eks_cluster" "cluster" {
-  name = module.cluster.cluster_id
-}
-
 data "aws_eks_cluster_auth" "auth" {
   name = module.cluster.cluster_id
 }
 
 data "http" "wait_for_cluster" {
-  ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+  ca_certificate = local.cluster_ca_certificate
   timeout        = 300
-  url            = "${data.aws_eks_cluster.cluster.endpoint}/healthz"
-}
-
-data "tls_certificate" "cluster" {
-  url = local.oidc_issuer_url
+  url            = "${local.cluster_endpoint}/healthz"
 }
 
 locals {
-  autoscaler_tags   = {
+  cluster_endpoint       = module.cluster.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.cluster.cluster_certificate_authority_data)
+  oidc_issuer            = trimprefix(module.cluster.cluster_oidc_issuer_url, "https://")
+  oidc_provider_arn      = module.cluster.oidc_provider_arn
+  worker_group_tags      = merge(var.extra_tags, {
     "k8s.io/cluster-autoscaler/enabled"             = true
     "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
-  }
-
-  oidc_issuer       = trimprefix(local.oidc_issuer_url, "https://")
-  oidc_issuer_url   = data.aws_eks_cluster.cluster.identity.0.oidc.0["issuer"]
-  oidc_provider_arn = aws_iam_openid_connect_provider.oidc.arn
-  worker_group_tags = merge(local.autoscaler_tags, var.extra_tags)
+  })
 }

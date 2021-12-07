@@ -1,7 +1,6 @@
 module "vpc" {
-  depends_on = [data.aws_availability_zones.available]
-  source     = "terraform-aws-modules/vpc/aws"
-  version    = "3.7.0"
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "3.7.0"
 
   name                 = "${var.cluster_name}-vpc"
   cidr                 = var.cidr_block
