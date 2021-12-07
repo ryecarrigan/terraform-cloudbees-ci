@@ -16,6 +16,10 @@ variable "chart_repository" {
   default = "https://charts.cloudbees.com/public/cloudbees"
 }
 
+variable "ci_chart_version" {
+  default = "3.37.2"
+}
+
 variable "ci_host_name" {}
 
 variable "ci_namespace" {

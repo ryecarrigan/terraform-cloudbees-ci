@@ -12,9 +12,7 @@ variable "chart_repository" {
   default = "https://charts.cloudbees.com/public/cloudbees"
 }
 
-variable "chart_version" {
-  default = "3.37.2"
-}
+variable "chart_version" {}
 
 variable "controller_image" {
   default = ""
