@@ -3,6 +3,7 @@ module "cloudbees_cd" {
 
   admin_password          = var.cd_admin_password
   aws_acm_certificate_arn = var.cd_acm_certificate_arn
+  ci_host_name            = "http://${var.ci_host_name}"
   host_name               = var.cd_host_name
   ingress_class           = "nginx"
   license_data            = local.cd_license_data
@@ -19,13 +20,14 @@ module "cloudbees_ci" {
   source = "../../modules/cloudbees-ci"
 
   bundle_data         = local.oc_bundle_data
+  chart_version       = var.ci_chart_version
   host_name           = var.ci_host_name
-  ingress_annotations = local.ingress_annotations
-  ingress_class     = "alb"
-  namespace         = var.ci_namespace
-  oc_configmap_name = var.oc_configmap_name
-  platform          = var.platform
-  secret_data       = local.oc_secret_data
+  ingress_annotations = var.ci_ingress_annotations
+  ingress_class       = var.ci_ingress_class
+  namespace           = var.ci_namespace
+  oc_configmap_name   = var.oc_configmap_name
+  platform            = var.platform
+  secret_data         = local.oc_secret_data
 }
 
 module "mysql" {
@@ -41,12 +43,7 @@ module "mysql" {
 locals {
   cd_license_data = fileexists(local.cd_license_file) ? file(local.cd_license_file) : ""
   cd_license_file = "${path.module}/${var.cd_license_file}"
-
-  ingress_annotations = {
-    "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-  }
-
-  oc_bundle_data =  { for file in fileset(local.oc_bundle_dir, "*.{yml,yaml}") : file => file("${local.oc_bundle_dir}/${file}") }
-  oc_bundle_dir  = "${path.module}/oc-casc-bundle"
-  oc_secret_data = fileexists(var.secrets_file) ? yamldecode(file(var.secrets_file)) : {}
+  oc_bundle_data  =  { for file in fileset(local.oc_bundle_dir, "*.{yml,yaml}") : file => file("${local.oc_bundle_dir}/${file}") }
+  oc_bundle_dir   = "${path.module}/oc-casc-bundle"
+  oc_secret_data  = fileexists(var.secrets_file) ? yamldecode(file(var.secrets_file)) : {}
 }

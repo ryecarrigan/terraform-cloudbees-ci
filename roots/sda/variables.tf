@@ -22,6 +22,18 @@ variable "ci_chart_version" {
 
 variable "ci_host_name" {}
 
+variable "ci_ingress_annotations" {
+  default = {
+    "alb.ingress.kubernetes.io/scheme" = "internet-facing"
+  }
+
+  type = map(string)
+}
+
+variable "ci_ingress_class" {
+  default = "alb"
+}
+
 variable "ci_namespace" {
   default = "cloudbees-ci"
 }
