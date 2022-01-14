@@ -8,6 +8,7 @@ module "cluster" {
   enable_irsa      = true
   manage_aws_auth  = true
   subnets          = module.vpc.private_subnets
+  tags             = var.extra_tags
   vpc_id           = module.vpc.vpc_id
   write_kubeconfig = false
 
@@ -42,8 +43,8 @@ locals {
   cluster_ca_certificate = base64decode(module.cluster.cluster_certificate_authority_data)
   oidc_issuer            = trimprefix(module.cluster.cluster_oidc_issuer_url, "https://")
   oidc_provider_arn      = module.cluster.oidc_provider_arn
-  worker_group_tags      = merge(var.extra_tags, {
+  worker_group_tags      = {
     "k8s.io/cluster-autoscaler/enabled"             = true
     "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
-  })
+  }
 }
