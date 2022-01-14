@@ -281,6 +281,7 @@ resource "aws_iam_role_policy_attachment" "alb_controller" {
 locals {
   alb_controller_values = <<EOT
 clusterName: ${var.cluster_name}
+createIngressClassResource: true
 image:
   repository: "${local.eks_addon_repository}/amazon/aws-load-balancer-controller"
 serviceAccount:
