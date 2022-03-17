@@ -1,6 +1,4 @@
 resource "helm_release" "this" {
-  depends_on = [kubernetes_service_account.this]
-
   chart      = "aws-efs-csi-driver"
   name       = var.release_name
   namespace  = var.namespace
@@ -79,7 +77,8 @@ resource "aws_security_group_rule" "ingress" {
 }
 
 resource "aws_iam_policy" "this" {
-  name = "${var.cluster_name}_efs-csi-driver"
+  name_prefix = "${var.cluster_name}_efs-csi-driver"
+
   policy = <<EOT
 {
   "Version": "2012-10-17",

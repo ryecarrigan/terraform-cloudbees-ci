@@ -1,27 +1,10 @@
 resource "helm_release" "this" {
-  depends_on = [kubernetes_service_account.this]
-
   chart      = "aws-ebs-csi-driver"
   name       = var.release_name
   namespace  = var.namespace
   repository = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
   values     = [local.helm_values]
   version    = var.release_version
-}
-
-resource "kubernetes_service_account" "this" {
-  metadata {
-    name      = var.service_account_name
-    namespace = var.namespace
-
-    annotations = {
-      "eks.amazonaws.com/role-arn": aws_iam_role.this.arn
-    }
-
-    labels = {
-      "app.kubernetes.io/name": var.release_name
-    }
-  }
 }
 
 resource "kubernetes_storage_class" "this" {
@@ -38,116 +21,9 @@ resource "kubernetes_storage_class" "this" {
 }
 
 resource "aws_iam_policy" "this" {
-  name = "${var.cluster_name}_ebs-csi-driver"
-  policy = <<EOT
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateSnapshot",
-        "ec2:AttachVolume",
-        "ec2:DetachVolume",
-        "ec2:ModifyVolume",
-        "ec2:DescribeAvailabilityZones",
-        "ec2:DescribeInstances",
-        "ec2:DescribeSnapshots",
-        "ec2:DescribeTags",
-        "ec2:DescribeVolumes",
-        "ec2:DescribeVolumesModifications"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:CreateTags"],
-      "Resource": [
-        "${local.ec2_arn_prefix}:volume",
-        "${local.ec2_arn_prefix}:snapshot"
-      ],
-      "Condition": {
-        "StringEquals": {
-          "ec2:CreateAction": [
-            "CreateVolume",
-            "CreateSnapshot"
-          ]
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:DeleteTags"],
-      "Resource": [
-        "${local.ec2_arn_prefix}:volume/*",
-        "${local.ec2_arn_prefix}:snapshot/*"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:CreateVolume"],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/ebs.csi.aws.com/cluster": "true"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:CreateVolume"],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/CSIVolumeName": "*"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:DeleteVolume"],
-      "Resource": "${local.ec2_arn_prefix}:volume/*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/CSIVolumeName": "*"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:DeleteVolume"],
-      "Resource": "${local.ec2_arn_prefix}:volume/*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/ebs.csi.aws.com/cluster": "true"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:DeleteSnapshot"],
-      "Resource": "${local.ec2_arn_prefix}:snapshot/*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/CSIVolumeSnapshotName": "*"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["ec2:DeleteSnapshot"],
-      "Resource": "${local.ec2_arn_prefix}:snapshot/*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/ebs.csi.aws.com/cluster": "true"
-        }
-      }
-    }
-  ]
-}
-EOT
-
-  tags = var.extra_tags
+  name_prefix = "${var.cluster_name}_ebs-csi-driver"
+  policy      = file("${path.module}/policy.json")
+  tags        = var.extra_tags
 }
 
 resource "aws_iam_role" "this" {
@@ -165,7 +41,7 @@ resource "aws_iam_role" "this" {
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "${var.oidc_issuer}:sub": "system:serviceaccount:${var.namespace}:${var.service_account_name}"
+          "${var.oidc_issuer}:sub": "system:serviceaccount:${var.namespace}:ebs-csi-controller-sa"
         }
       }
     }
@@ -217,8 +93,9 @@ locals {
 controller:
   extraVolumeTags: ${jsonencode(var.extra_tags)}
   serviceAccount:
-    create: false
-    name: ${kubernetes_service_account.this.metadata.0.name}
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: ${aws_iam_role.this.arn}
 enableVolumeSnapshot: true
 image:
   repository: "${local.eks_addon_repository}/eks/aws-ebs-csi-driver"
