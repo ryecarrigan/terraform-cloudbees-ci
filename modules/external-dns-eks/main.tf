@@ -23,6 +23,8 @@ resource "kubernetes_service_account" "this" {
 }
 
 resource "aws_iam_policy" "this" {
+  name_prefix = "${var.cluster_name}_external-dns"
+
   policy = <<EOT
 {
   "Version": "2012-10-17",
