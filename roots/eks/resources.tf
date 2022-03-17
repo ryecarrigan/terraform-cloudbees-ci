@@ -71,13 +71,6 @@ module "external_dns" {
   route53_zone_id   = data.aws_route53_zone.domain_name.id
 }
 
-module "ingress_nginx" {
-  depends_on = [data.http.wait_for_cluster]
-  source     = "../../modules/ingress-nginx"
-
-  acm_certificate_arn = module.cd_acm_cert.certificate_arn
-}
-
 data "aws_caller_identity" "self" {}
 data "aws_region" "this" {}
 
