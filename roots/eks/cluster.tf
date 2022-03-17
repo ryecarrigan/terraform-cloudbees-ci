@@ -21,6 +21,7 @@ module "cluster" {
       asg_desired_capacity     = 1
       instance_refresh_enabled = true
       key_name                 = var.key_name
+      on_demand_base_capacity  = 2
       subnets                  = [subnet]
       tags                     = [for k, v in local.worker_group_tags : {key = k, propagate_at_launch = true, value = v}]
       update_default_version   = true
