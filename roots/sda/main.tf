@@ -14,7 +14,7 @@ module "cloudbees_cd" {
   mysql_user              = var.mysql_user
   namespace               = var.cd_namespace
   platform                = var.platform
-  rwx_storage_class       = "efs"
+  rwx_storage_class       = var.rwx_storage_class
 }
 
 module "cloudbees_ci" {

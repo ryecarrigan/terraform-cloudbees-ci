@@ -53,6 +53,7 @@ variable "oc_configmap_name" {
 }
 
 variable "platform" {}
+variable "rwx_storage_class" {}
 
 variable "secrets_file" {
   default = "values/secrets.yaml"
