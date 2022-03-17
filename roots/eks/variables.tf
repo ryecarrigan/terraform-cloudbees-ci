@@ -12,6 +12,10 @@ variable "bastion_enabled" {
 }
 
 variable "cd_subdomain" {}
+variable "ci_namespace" {
+  default = "cloudbees-ci"
+}
+
 variable "ci_subdomain" {}
 
 variable "cidr_block" {
@@ -20,6 +24,10 @@ variable "cidr_block" {
 
 variable "cluster_name" {
   default = "terraform-cloudbees-ci"
+}
+
+variable "dashboard_subdomain" {
+  default = "dashboard"
 }
 
 variable "domain_name" {}
@@ -31,6 +39,10 @@ variable "eks_version" {
 variable "extra_tags" {
   default = {}
   type    = map(string)
+}
+
+variable "grafana_subdomain" {
+  default = "grafana"
 }
 
 variable "instance_types" {
