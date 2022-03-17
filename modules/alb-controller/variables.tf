@@ -1,3 +1,4 @@
+variable "aws_region" {}
 variable "cluster_name" {}
 
 variable "extra_tags" {
@@ -16,7 +17,7 @@ variable "release_name" {
 }
 
 variable "release_version" {
-  default = "1.3.1"
+  default = "1.3.3"
 }
 
 variable "service_account_name" {

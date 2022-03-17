@@ -6,12 +6,28 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
+variable "bastion_enabled" {
+  default = false
+  type    = bool
+}
+
+variable "cd_subdomain" {}
+variable "ci_namespace" {
+  default = "cloudbees-ci"
+}
+
+variable "ci_subdomain" {}
+
 variable "cidr_block" {
   default = "10.0.0.0/16"
 }
 
 variable "cluster_name" {
   default = "terraform-cloudbees-ci"
+}
+
+variable "dashboard_subdomain" {
+  default = "dashboard"
 }
 
 variable "domain_name" {}
@@ -25,6 +41,10 @@ variable "extra_tags" {
   type    = map(string)
 }
 
+variable "grafana_subdomain" {
+  default = "grafana"
+}
+
 variable "instance_types" {
   default = ["m5.xlarge", "m5a.xlarge", "m4.xlarge"]
   type    = set(string)
@@ -36,10 +56,6 @@ variable "key_name" {
 
 variable "ssh_cidr" {
   default = "0.0.0.0/32"
-}
-
-variable "subdomain" {
-  default = ""
 }
 
 variable "zone_count" {

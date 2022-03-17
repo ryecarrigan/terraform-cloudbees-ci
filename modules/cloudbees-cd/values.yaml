@@ -1,0 +1,15 @@
+database:
+  dbType: mysql
+  dbPort: 3306
+  mysqlConnector:
+    enabled: true
+
+nginx-ingress:
+  enabled: false
+
+server:
+  volumesPermissionsInitContainer:
+    enabled: false
+
+mariadb:
+  enabled: false

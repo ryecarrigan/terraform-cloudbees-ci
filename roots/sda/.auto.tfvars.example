@@ -1,19 +1,15 @@
 # Required vars
+cd_admin_password =
 domain_name =
+mysql_password = "awo98iu0-[898xcg"
 
 # Optional vars (default will be used if not set)
-#agent_image =
+#cd_acm_certificate_arn =
 #chart_repository =
-#chart_version =
 #ci_namespace =
-#controller_image =
-#hibernation_enabled =
-#manage_namespace =
-#oc_configmap_name =
-#oc_image =
-#oc_secret_name =
-#oc_secret_path =
+#install_mysql =
+#mysql_database =
+#mysql_root_password =
+#mysql_user =
 #platform = "eks"
 #secrets_file =
-#storage_class =
-#subdomain =

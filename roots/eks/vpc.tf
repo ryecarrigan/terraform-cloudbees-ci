@@ -1,7 +1,6 @@
 module "vpc" {
-  depends_on = [data.aws_availability_zones.available]
-  source     = "terraform-aws-modules/vpc/aws"
-  version    = "3.7.0"
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "3.7.0"
 
   name                 = "${var.cluster_name}-vpc"
   cidr                 = var.cidr_block
@@ -26,6 +25,7 @@ module "vpc" {
 }
 
 module "bastion" {
+  count      = var.bastion_enabled ? 1 : 0
   depends_on = [module.vpc]
   source     = "../../modules/aws-bastion"
 
@@ -36,28 +36,4 @@ module "bastion" {
   vpc_id                   = module.vpc.vpc_id
 }
 
-resource "aws_acm_certificate" "certificate" {
-  domain_name       = length(var.subdomain) > 0 ? "${var.subdomain}.${var.domain_name}" : var.domain_name
-  validation_method = "DNS"
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "aws_route53_record" "validation" {
-  depends_on = [aws_acm_certificate.certificate]
-  for_each   = {for option in aws_acm_certificate.certificate.domain_validation_options : option.domain_name => option}
-
-  name     = each.value["resource_record_name"]
-  records  = [each.value["resource_record_value"]]
-  ttl      = 60
-  type     = each.value["resource_record_type"]
-  zone_id  = data.aws_route53_zone.domain_name.id
-}
-
 data "aws_availability_zones" "available" {}
-
-data "aws_route53_zone" "domain_name" {
-  name = var.domain_name
-}

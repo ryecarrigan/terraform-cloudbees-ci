@@ -22,6 +22,7 @@ eks-create:
 	make eks ACTION="apply -auto-approve"
 	make eks-context
 	make sda ACTION="apply -auto-approve"
+	bash wait_for_cjoc.sh
 
 
 eks-destroy:
@@ -33,3 +34,9 @@ eks-destroy:
 sda: roots/sda
 	@cd roots/sda && \
 		terraform $(ACTION)
+
+
+.PHONY: casc
+casc: roots/sda
+	@cd roots/sda && \
+		terraform $(ACTION) -target=module.cloudbees_ci.kubernetes_config_map.casc_bundle
