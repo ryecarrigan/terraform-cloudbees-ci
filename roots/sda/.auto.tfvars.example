@@ -1,7 +1,7 @@
 # Required vars
 cd_admin_password =
 domain_name =
-mysql_password = "awo98iu0-[898xcg"
+mysql_password = ""
 
 # Optional vars (default will be used if not set)
 #cd_acm_certificate_arn =

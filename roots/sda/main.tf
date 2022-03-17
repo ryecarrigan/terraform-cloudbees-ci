@@ -2,13 +2,14 @@ module "cloudbees_cd" {
   source = "../../modules/cloudbees-cd"
 
   admin_password          = var.cd_admin_password
-  aws_acm_certificate_arn = var.cd_acm_certificate_arn
+  chart_version           = var.cd_chart_version
   ci_host_name            = "http://${var.ci_host_name}"
   host_name               = var.cd_host_name
-  ingress_class           = "nginx"
+  ingress_annotations     = var.ingress_annotations
+  ingress_class           = var.ingress_class
   license_data            = local.cd_license_data
   mysql_database          = var.mysql_database
-  mysql_endpoint          = local.mysql_endpoint
+  mysql_endpoint          = module.mysql.dns_name
   mysql_password          = var.mysql_password
   mysql_user              = var.mysql_user
   namespace               = var.cd_namespace

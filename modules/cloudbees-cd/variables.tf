@@ -1,12 +1,7 @@
 variable "admin_password" {}
-
-variable "aws_acm_certificate_arn" {}
-
-variable "chart_version" {
-  default = "2.11.1"
-}
-
+variable "chart_version" {}
 variable "host_name" {}
+variable "ingress_annotations" {}
 variable "ingress_class" {}
 variable "license_data" {}
 variable "mysql_database" {}

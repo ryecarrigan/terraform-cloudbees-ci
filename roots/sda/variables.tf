@@ -1,8 +1,8 @@
-variable "cd_acm_certificate_arn" {
-  default = ""
+variable "cd_admin_password" {}
+variable "cd_chart_version" {
+  default = "2.13.2"
 }
 
-variable "cd_admin_password" {}
 variable "cd_host_name" {}
 
 variable "cd_license_file" {
