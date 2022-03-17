@@ -35,7 +35,6 @@ module "cloudbees_ci" {
 }
 
 module "mysql" {
-  count  = var.install_mysql ? 1 : 0
   source = "../../modules/mysql"
 
   database_name = var.mysql_database
@@ -45,7 +44,6 @@ module "mysql" {
 }
 
 locals {
-  mysql_endpoint  = var.install_mysql ? module.mysql[0].dns_name : ""
   cd_license_data = fileexists(local.cd_license_file) ? file(local.cd_license_file) : ""
   cd_license_file = "${path.module}/${var.cd_license_file}"
   oc_bundle_data  =  { for file in fileset(local.oc_bundle_dir, "*.{yml,yaml}") : file => file("${local.oc_bundle_dir}/${file}") }

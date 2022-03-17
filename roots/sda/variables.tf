@@ -42,10 +42,7 @@ variable "mysql_database" {
 }
 
 variable "mysql_password" {}
-
-variable "mysql_root_password" {
-  default = ""
-}
+variable "mysql_root_password" {}
 
 variable "mysql_user" {
   default = "flow"
