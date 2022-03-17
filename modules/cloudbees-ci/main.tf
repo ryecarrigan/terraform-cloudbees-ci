@@ -14,13 +14,8 @@ resource "helm_release" "this" {
   name       = "cloudbees-ci"
   namespace  = local.namespace_name
   repository = var.chart_repository
-  values     = [lookup(local.values_files, var.platform), local.ingress_values, local.secret_values]
+  values     = [local.values]
   version    = var.chart_version
-
-  set {
-    name  = "OperationsCenter.HostName"
-    value = var.host_name
-  }
 
   # Dynamically set values if the associated vars are set
   dynamic "set" {
@@ -54,43 +49,75 @@ locals {
   dynamic_values = {for k, v in local.optional_values: k => v if v != ""}
   optional_values = {
     "OperationsCenter.Image.dockerImage"         = var.oc_image
-    "OperationsCenter.Platform"                  = var.platform
-    "OperationsCenter.Resources.Limits.Cpu"      = var.oc_cpu_request
-    "OperationsCenter.Resources.Requests.Cpu"    = var.oc_cpu_request
-    "OperationsCenter.Resources.Limits.Memory"   = var.oc_memory_request
-    "OperationsCenter.Resources.Requests.Memory" = var.oc_memory_request
     "Master.Image.dockerImage"                   = var.controller_image
     "Agents.Image.dockerImage"                   = var.agent_image
-    "Hibernation.Enabled"                        = var.hibernation_enabled
     "Persistence.StorageClass"                   = var.storage_class
   }
 
-  annotation_strings = [for k, v in var.ingress_annotations : "${k}: ${v}"]
+  oc_heap_size = "${var.oc_memory / 2}G"
+  controller_heap_size = "${var.controller_memory / 2}G"
 
-  ingress_values = <<EOT
+  values = <<EOT
 OperationsCenter:
+  CasC:
+    Enabled: true
+
+  Platform: ${var.platform}
+  HostName: ${var.host_name}
+  Protocol: https
+
+  Resources:
+    Limits:
+      Cpu: ${var.oc_cpu}
+      Memory: ${var.oc_memory}G
+    Requests:
+      Cpu: ${var.oc_cpu}
+      Memory: ${var.oc_memory}G
+
   Ingress:
     Class: ${var.ingress_class}
     Annotations:
-      ${join("\n      ", local.annotation_strings)}
-EOT
+      ${indent(6, var.ingress_annotations)}
 
-  secret_values = <<EOT
-OperationsCenter:
   ContainerEnv:
     - name: SECRETS
       value: ${var.secret_mount_path}
+    - name: MASTER_JAVA_OPTIONS
+      value: "-Xms${local.controller_heap_size} -Xmx${local.controller_heap_size} -Dhudson.slaves.NodeProvisioner.initialDelay=0 -XshowSettings:vm -XX:+AlwaysPreTouch -XX:+UseG1GC -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+UseStringDeduplication"
+
+  JavaOpts:
+    -Xms${local.oc_heap_size}
+    -Xmx${local.oc_heap_size}
+    -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.enablePluginCatalogInOC=true
+    -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true
+
+  ExtraGroovyConfiguration:
+    bundles-sync.groovy: |
+      def log = java.util.logging.Logger.getLogger('bundles-sync.groovy')
+      def job = jenkins.model.Jenkins.get().getItem('casc-bundles-update')
+      if (job) {
+        log.info('Scheduling bundle sync job')
+        def run = jenkins.model.Jenkins.get().getQueue().schedule(job)
+        run.future.waitForStart()
+        log.info('Bundle sync job starting')
+        run.future.get()
+        log.info('Bundle sync job completed')
+      } else {
+        log.warning('CasC bundles sync job does not yet exist')
+      }
+
   ExtraVolumes:
     - name: ${local.secret_name}
       secret:
         defaultMode: 0400
         secretName: ${local.secret_name}
+
   ExtraVolumeMounts:
     - name: ${local.secret_name}
       mountPath: ${var.secret_mount_path}
-EOT
 
-  values_files = {
-    eks = file("${path.module}/values/eks.yaml")
-  }
+Hibernation:
+  Enabled: ${var.hibernation_enabled}
+
+EOT
 }

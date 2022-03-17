@@ -1,7 +1,3 @@
-variable "acm_certificate_arn" {
-  default = ""
-}
-
 variable "agent_image" {
   default = ""
 }
@@ -14,8 +10,18 @@ variable "chart_repository" {
 
 variable "chart_version" {}
 
+variable "controller_cpu" {
+  default = 2
+  type    = number
+}
+
 variable "controller_image" {
   default = ""
+}
+
+variable "controller_memory" {
+  default = 8
+  type    = number
 }
 
 variable "hibernation_enabled" {
@@ -25,10 +31,7 @@ variable "hibernation_enabled" {
 
 variable "host_name" {}
 
-variable "ingress_annotations" {
-  type = map(string)
-}
-
+variable "ingress_annotations" {}
 variable "ingress_class" {}
 variable "namespace" {}
 
@@ -36,16 +39,18 @@ variable "oc_configmap_name" {
   default = "oc-casc-bundle"
 }
 
-variable "oc_cpu_request" {
-  default = "2"
+variable "oc_cpu" {
+  default = 2
+  type    = number
 }
 
 variable "oc_image" {
   default = ""
 }
 
-variable "oc_memory_request" {
-  default = "4G"
+variable "oc_memory" {
+  default = 4
+  type    = number
 }
 
 variable "oc_secret_name" {
@@ -56,7 +61,9 @@ variable "secret_mount_path" {
   default = "/var/run/secrets/cjoc"
 }
 
-variable "platform" {}
+variable "platform" {
+  default = "standard"
+}
 
 variable "secret_data" {
   default = {}

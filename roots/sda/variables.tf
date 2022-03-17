@@ -4,6 +4,7 @@ variable "cd_acm_certificate_arn" {
 
 variable "cd_admin_password" {}
 variable "cd_host_name" {}
+
 variable "cd_license_file" {
   default = "values/license.xml"
 }
@@ -17,22 +18,10 @@ variable "chart_repository" {
 }
 
 variable "ci_chart_version" {
-  default = "3.37.2"
+  default = "3.39.9"
 }
 
 variable "ci_host_name" {}
-
-variable "ci_ingress_annotations" {
-  default = {
-    "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-  }
-
-  type = map(string)
-}
-
-variable "ci_ingress_class" {
-  default = "alb"
-}
 
 variable "ci_namespace" {
   default = "cloudbees-ci"
@@ -40,9 +29,12 @@ variable "ci_namespace" {
 
 variable "domain_name" {}
 
-variable "install_mysql" {
-  type    = bool
-  default = false
+variable "ingress_annotations" {
+  default = "[]"
+}
+
+variable "ingress_class" {
+  default = "alb"
 }
 
 variable "mysql_database" {

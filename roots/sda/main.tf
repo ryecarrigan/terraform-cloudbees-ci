@@ -21,9 +21,13 @@ module "cloudbees_ci" {
 
   bundle_data         = local.oc_bundle_data
   chart_version       = var.ci_chart_version
+  controller_cpu      = 2
+  controller_memory   = 8
   host_name           = var.ci_host_name
-  ingress_annotations = var.ci_ingress_annotations
-  ingress_class       = var.ci_ingress_class
+  ingress_annotations = var.ingress_annotations
+  ingress_class       = var.ingress_class
+  oc_cpu              = 2
+  oc_memory           = 4
   namespace           = var.ci_namespace
   oc_configmap_name   = var.oc_configmap_name
   platform            = var.platform
