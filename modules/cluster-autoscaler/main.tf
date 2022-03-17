@@ -56,7 +56,8 @@ resource "kubernetes_service_account" "this" {
 }
 
 resource "aws_iam_policy" "this" {
-  name = "${var.cluster_name}_cluster-autoscaler"
+  name_prefix = "${var.cluster_name}_cluster-autoscaler"
+
   policy = <<EOT
 {
   "Version": "2012-10-17",
