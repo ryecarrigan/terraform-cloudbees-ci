@@ -13,7 +13,7 @@ variable "namespace" {
   default = "cloudbees-cd"
 }
 
-variable "ci_host_name" {}
+variable "ci_oc_url" {}
 
 variable "platform" {
   validation {

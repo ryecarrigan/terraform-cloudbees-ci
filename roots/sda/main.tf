@@ -3,7 +3,7 @@ module "cloudbees_cd" {
 
   admin_password          = var.cd_admin_password
   chart_version           = var.cd_chart_version
-  ci_host_name            = "http://${var.ci_host_name}"
+  ci_oc_url               = "http://${var.ci_host_name}/cjoc"
   host_name               = var.cd_host_name
   ingress_annotations     = var.ingress_annotations
   ingress_class           = var.ingress_class

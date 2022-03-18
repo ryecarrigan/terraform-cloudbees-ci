@@ -40,7 +40,7 @@ platform: ${var.platform}
 server:
   extraEnvs:
   - name: CBF_OC_URL
-    value: "${var.ci_host_name}/cjoc"
+    value: ${var.ci_oc_url}
   - name: CBF_SERVER_SDA_MODE
     value: "true"
   volumesPermissionsInitContainer:
