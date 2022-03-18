@@ -1,6 +1,0 @@
-
-nginx-ingress:
-  enabled: false
-
-mariadb:
-  enabled: false

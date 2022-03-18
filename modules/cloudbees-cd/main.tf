@@ -17,6 +17,7 @@ resource "kubernetes_secret" "this" {
 
 resource "helm_release" "this" {
   timeout = 1800
+  wait    = false
 
   chart      = "cloudbees-flow"
   name       = var.release_name
@@ -29,11 +30,10 @@ resource "helm_release" "this" {
 locals {
   values = <<EOT
 ingress:
-  enabled: true
-  class: ${var.ingress_class}
   host: ${var.host_name}
   annotations:
     ${indent(4, var.ingress_annotations)}
+  class: ${var.ingress_class}
 
 platform: ${var.platform}
 
@@ -73,6 +73,9 @@ flowCredentials:
 
 flowLicense:
   existingSecret: ${kubernetes_secret.this.metadata.0.name}
+
+nginx-ingress:
+  enabled: false
 
 EOT
 }
