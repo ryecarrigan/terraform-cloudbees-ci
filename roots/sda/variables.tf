@@ -37,6 +37,8 @@ variable "ingress_class" {
   default = "alb"
 }
 
+variable "kubeconfig_file" {}
+
 variable "mysql_database" {
   default = "flowdb"
 }
