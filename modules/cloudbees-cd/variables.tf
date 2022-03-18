@@ -4,10 +4,20 @@ variable "host_name" {}
 variable "ingress_annotations" {}
 variable "ingress_class" {}
 variable "license_data" {}
-variable "mysql_database" {}
-variable "mysql_endpoint" {}
-variable "mysql_password" {}
-variable "mysql_user" {}
+variable "database_name" {}
+variable "database_endpoint" {}
+variable "database_password" {}
+
+variable "database_port" {
+  default = 3306
+  type    = number
+}
+
+variable "database_type" {
+  default = "mysql"
+}
+
+variable "database_user" {}
 
 variable "namespace" {
   default = "cloudbees-cd"

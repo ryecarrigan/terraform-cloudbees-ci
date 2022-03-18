@@ -40,9 +40,9 @@ platform: ${var.platform}
 server:
   extraEnvs:
   - name: CBF_OC_URL
-    value: ${var.ci_oc_url}
+    value: "${var.ci_oc_url}"
   - name: CBF_SERVER_SDA_MODE
-    value: "true"
+    value: "${var.ci_oc_url != ""}"
   volumesPermissionsInitContainer:
     enabled: false
 
@@ -59,14 +59,13 @@ storage:
       storageClass: ${var.rwx_storage_class}
 
 database:
-  clusterEndpoint: ${var.mysql_endpoint}
-  dbName: ${var.mysql_database}
-  dbUser: ${var.mysql_user}
-  dbPassword: ${var.mysql_password}
-  dbType: mysql
-  dbPort: 3306
-  mysqlConnector:
-    enabled: true
+  clusterEndpoint: ${var.database_endpoint}
+  dbName: ${var.database_name}
+  dbUser: ${var.database_user}
+  dbPassword: ${var.database_password}
+  dbType: ${var.database_type}
+  dbPort: ${var.database_port}
+  ${var.database_type == "mysql" ? "mysqlConnector:\n    enabled: true" : ""}
 
 flowCredentials:
   adminPassword: ${var.admin_password}
