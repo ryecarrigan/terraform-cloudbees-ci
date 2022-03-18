@@ -20,6 +20,10 @@ terraform {
       version = ">= 2.5.0"
     }
 
+    null = {
+      version = ">= 3.1.1"
+    }
+
     tls = {
       version = ">= 3.1.0"
     }

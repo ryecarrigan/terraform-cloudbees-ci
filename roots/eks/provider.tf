@@ -6,13 +6,13 @@ provider "aws" {
 provider "kubernetes" {
   host                   = local.cluster_endpoint
   cluster_ca_certificate = local.cluster_ca_certificate
-  token                  = data.aws_eks_cluster_auth.auth.token
+  token                  = local.cluster_auth_token
 }
 
 provider "helm" {
   kubernetes {
     host                   = local.cluster_endpoint
     cluster_ca_certificate = local.cluster_ca_certificate
-    token                  = data.aws_eks_cluster_auth.auth.token
+    token                  = local.cluster_auth_token
   }
 }

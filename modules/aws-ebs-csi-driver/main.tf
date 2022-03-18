@@ -10,6 +10,9 @@ resource "helm_release" "this" {
 resource "kubernetes_storage_class" "this" {
   metadata {
     name = var.storage_class_name
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class": var.is_default
+    }
   }
 
   parameters = {
@@ -89,9 +92,11 @@ locals {
     "us-west-2"      = "602401143452.dkr.ecr.us-west-2.amazonaws.com"
   }
 
+  extra_tags = join("\n", [for k, v in var.extra_tags : "\"${k}\": \"${v}\""])
   helm_values = <<EOT
 controller:
-  extraVolumeTags: ${jsonencode(var.extra_tags)}
+  extraVolumeTags:
+    ${indent(4, local.extra_tags)}
   serviceAccount:
     create: true
     annotations:

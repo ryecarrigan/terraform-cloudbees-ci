@@ -7,6 +7,11 @@ variable "extra_tags" {
   type    = map(string)
 }
 
+variable "is_default" {
+  default = false
+  type    = bool
+}
+
 variable "namespace" {
   default = "kube-system"
 }

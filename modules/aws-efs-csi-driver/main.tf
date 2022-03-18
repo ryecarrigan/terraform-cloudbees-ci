@@ -27,6 +27,9 @@ resource "kubernetes_storage_class" "this" {
 
   metadata {
     name = var.storage_class_name
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class": var.is_default
+    }
   }
 
   parameters = {
@@ -153,8 +156,11 @@ resource "aws_iam_role_policy_attachment" "efs_csi_driver" {
 }
 
 locals {
+  extra_tags = join("\n", [for k, v in var.extra_tags : "\"${k}\": \"${v}\""])
   efs_driver_values = <<EOT
 controller:
+  extraVolumeTags:
+    ${indent(4, local.extra_tags)}
   serviceAccount:
     create: false
     name: ${var.service_account_name}
