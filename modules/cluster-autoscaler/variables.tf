@@ -16,6 +16,10 @@ variable "release_name" {
   default = "cluster-autoscaler"
 }
 
+variable "release_version" {
+  default = "9.16.1"
+}
+
 variable "service_account_name" {
   default = "cluster-autoscaler"
 }

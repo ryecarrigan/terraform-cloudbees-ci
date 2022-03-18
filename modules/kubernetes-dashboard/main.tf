@@ -5,9 +5,11 @@ resource "kubernetes_namespace" "this" {
 }
 
 resource "helm_release" "dashboard" {
+  depends_on = [kubernetes_namespace.this]
+
   chart      = "kubernetes-dashboard"
   name       = "kubernetes-dashboard"
-  namespace  = kubernetes_namespace.this.metadata.0.name
+  namespace  = var.namespace
   repository = "https://kubernetes.github.io/dashboard/"
   values     = [local.values]
 }

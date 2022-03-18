@@ -52,7 +52,7 @@ resource "null_resource" "patch_gp2" {
   depends_on = [module.cluster]
 
   provisioner "local-exec" {
-    command = "kubectl annotate storageclass gp2 storageclass.kubernetes.io/is-default-class=false"
+    command = "kubectl annotate --overwrite storageclass gp2 storageclass.kubernetes.io/is-default-class=false"
     environment = {
       KUBECONFIG = module.cluster.kubeconfig_filename
     }

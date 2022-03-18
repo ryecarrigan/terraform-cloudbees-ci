@@ -3,6 +3,7 @@ resource "helm_release" "this" {
   name       = var.release_name
   namespace  = var.namespace
   repository = "https://kubernetes.github.io/autoscaler"
+  version    = var.release_version
 
   set {
     name  = "autoDiscovery.clusterName"
