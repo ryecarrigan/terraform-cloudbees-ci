@@ -9,5 +9,6 @@
 *.tfvars
 admin-user-token.txt
 backend.tf
+kubeconfig_*
 license.xml
 secrets.yaml

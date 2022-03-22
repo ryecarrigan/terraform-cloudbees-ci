@@ -1,15 +1,33 @@
-# Required vars
-cd_admin_password =
-domain_name =
-mysql_password = "awo98iu0-[898xcg"
+# Required variables
+ci_host_name =
+ingress_class =
+kubeconfig_file =
 
-# Optional vars (default will be used if not set)
-#cd_acm_certificate_arn =
+# Common configuration
 #chart_repository =
+#ingress_annotations =
+#platform =
+
+# Options for installing and configuring CloudBees CI
+install_ci = true
+#ci_chart_version =
 #ci_namespace =
-#install_mysql =
-#mysql_database =
-#mysql_root_password =
-#mysql_user =
-#platform = "eks"
+#oc_configmap_name =
 #secrets_file =
+
+# Options for installing and configuring CloudBees CD/RO
+install_cdro = true
+#cd_admin_password =
+#cd_chart_version =
+#cd_host_name =
+#cd_license_file =
+#cd_namespace =
+#database_endpoint =
+#database_name =
+#database_password =
+#database_user =
+#rwx_storage_class =
+
+# Options for installing and configuring a MySQL release
+#install_mysql = true
+#mysql_root_password =

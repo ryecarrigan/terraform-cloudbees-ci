@@ -7,6 +7,11 @@ variable "extra_tags" {
   type    = map(string)
 }
 
+variable "is_default" {
+  default = false
+  type    = bool
+}
+
 variable "namespace" {
   default = "kube-system"
 }
@@ -22,7 +27,7 @@ variable "release_name" {
 }
 
 variable "release_version" {
-  default = "2.2.0"
+  default = "2.2.4"
 }
 
 variable "service_account_name" {

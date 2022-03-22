@@ -17,7 +17,7 @@ variable "release_name" {
 }
 
 variable "release_version" {
-  default = "1.3.3"
+  default = "1.4.1"
 }
 
 variable "service_account_name" {

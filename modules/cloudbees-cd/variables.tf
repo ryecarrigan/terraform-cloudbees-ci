@@ -1,24 +1,29 @@
 variable "admin_password" {}
-
-variable "aws_acm_certificate_arn" {}
-
-variable "chart_version" {
-  default = "2.11.1"
-}
-
+variable "chart_version" {}
 variable "host_name" {}
+variable "ingress_annotations" {}
 variable "ingress_class" {}
 variable "license_data" {}
-variable "mysql_database" {}
-variable "mysql_endpoint" {}
-variable "mysql_password" {}
-variable "mysql_user" {}
+variable "database_name" {}
+variable "database_endpoint" {}
+variable "database_password" {}
+
+variable "database_port" {
+  default = 3306
+  type    = number
+}
+
+variable "database_type" {
+  default = "mysql"
+}
+
+variable "database_user" {}
 
 variable "namespace" {
   default = "cloudbees-cd"
 }
 
-variable "ci_host_name" {}
+variable "ci_oc_url" {}
 
 variable "platform" {
   validation {

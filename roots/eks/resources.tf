@@ -27,7 +27,7 @@ module "prometheus_acm_cert" {
 }
 
 module "alb_controller" {
-  depends_on = [data.http.wait_for_cluster]
+  depends_on = [module.cluster]
   source     = "../../modules/alb-controller"
 
   aws_region        = local.aws_region
@@ -38,7 +38,8 @@ module "alb_controller" {
 }
 
 module "cluster_autoscaler" {
-  source = "../../modules/cluster-autoscaler"
+  depends_on = [module.cluster]
+  source     = "../../modules/cluster-autoscaler"
 
   cluster_name       = var.cluster_name
   kubernetes_version = var.eks_version
@@ -47,20 +48,32 @@ module "cluster_autoscaler" {
   worker_asg_arns    = module.cluster.workers_asg_arns
 }
 
+resource "null_resource" "patch_gp2" {
+  depends_on = [module.cluster]
+
+  provisioner "local-exec" {
+    command = "kubectl annotate --overwrite storageclass gp2 storageclass.kubernetes.io/is-default-class=false"
+    environment = {
+      KUBECONFIG = module.cluster.kubeconfig_filename
+    }
+  }
+}
+
 module "ebs_driver" {
-  depends_on = [data.http.wait_for_cluster]
+  depends_on = [null_resource.patch_gp2]
   source     = "../../modules/aws-ebs-csi-driver"
 
   aws_account_id    = local.aws_account_id
   aws_region        = local.aws_region
   cluster_name      = var.cluster_name
   extra_tags        = var.extra_tags
+  is_default        = true
   oidc_issuer       = local.oidc_issuer
   oidc_provider_arn = local.oidc_provider_arn
 }
 
 module "efs_driver" {
-  depends_on = [data.http.wait_for_cluster]
+  depends_on = [null_resource.patch_gp2]
   source     = "../../modules/aws-efs-csi-driver"
 
   aws_account_id           = local.aws_account_id
@@ -75,7 +88,7 @@ module "efs_driver" {
 }
 
 module "external_dns" {
-  depends_on = [data.http.wait_for_cluster]
+  depends_on = [module.cluster]
   source     = "../../modules/external-dns-eks"
 
   cluster_name      = var.cluster_name

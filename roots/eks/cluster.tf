@@ -1,7 +1,7 @@
 module "cluster" {
   depends_on = [module.vpc]
   source     = "terraform-aws-modules/eks/aws"
-  version    = "17.20.0"
+  version    = "17.24.0"
 
   cluster_name     = var.cluster_name
   cluster_version  = var.eks_version
@@ -10,7 +10,7 @@ module "cluster" {
   subnets          = module.vpc.private_subnets
   tags             = var.extra_tags
   vpc_id           = module.vpc.vpc_id
-  write_kubeconfig = false
+  write_kubeconfig = true
 
   worker_groups_launch_template = [for subnet in module.vpc.private_subnets :
     {
@@ -33,13 +33,8 @@ data "aws_eks_cluster_auth" "auth" {
   name = module.cluster.cluster_id
 }
 
-data "http" "wait_for_cluster" {
-  ca_certificate = local.cluster_ca_certificate
-  timeout        = 300
-  url            = "${local.cluster_endpoint}/healthz"
-}
-
 locals {
+  cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
   cluster_endpoint       = module.cluster.cluster_endpoint
   cluster_ca_certificate = base64decode(module.cluster.cluster_certificate_authority_data)
   oidc_issuer            = trimprefix(module.cluster.cluster_oidc_issuer_url, "https://")

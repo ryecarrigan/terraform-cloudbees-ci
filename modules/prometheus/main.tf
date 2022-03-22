@@ -9,7 +9,7 @@ resource "helm_release" "this" {
 
   chart      = "kube-prometheus-stack"
   name       = var.release_name
-  namespace  = kubernetes_namespace.this.metadata.0.name
+  namespace  = var.namespace
   repository = "https://prometheus-community.github.io/helm-charts"
   values     = [local.values]
 }
