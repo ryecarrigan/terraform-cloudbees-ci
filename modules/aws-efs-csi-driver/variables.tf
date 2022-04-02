@@ -1,23 +1,33 @@
-variable "aws_region" {}
-variable "aws_account_id" {}
-variable "cluster_name" {}
-
-variable "extra_tags" {
-  default = {}
-  type    = map(string)
+variable "aws_account_id" {
+  type = string
 }
 
-variable "is_default" {
+variable "aws_region" {
+  type = string
+}
+
+variable "cluster_name" {
+  type = string
+}
+
+variable "dns_suffix" {
+  default = "amazonaws.com"
+  type    = string
+}
+
+variable "eks_addon_repository" {
+  type = string
+}
+
+variable "is_default_class" {
   default = false
   type    = bool
 }
 
-variable "namespace" {
-  default = "kube-system"
+variable "oidc_issuer" {
+  type = string
 }
 
-variable "oidc_issuer" {}
-variable "oidc_provider_arn" {}
 variable "private_subnet_ids" {
   type = list(string)
 }
@@ -32,12 +42,18 @@ variable "release_version" {
 
 variable "service_account_name" {
   default = "aws-efs-csi-driver"
+  type    = string
 }
 
-variable "source_security_group_id" {}
+variable "source_security_group_id" {
+  type = string
+}
 
 variable "storage_class_name" {
   default = "efs"
+  type    = string
 }
 
-variable "vpc_id" {}
+variable "vpc_id" {
+  type = string
+}

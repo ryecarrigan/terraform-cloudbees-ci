@@ -1,48 +1,103 @@
-resource "helm_release" "this" {
-  chart      = "aws-efs-csi-driver"
-  name       = var.release_name
-  namespace  = var.namespace
-  repository = "https://kubernetes-sigs.github.io/aws-efs-csi-driver"
-  values     = [local.efs_driver_values]
-  version    = var.release_version
+data "aws_iam_policy_document" "assume_role_policy" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    condition {
+      test     = "StringEquals"
+      values   = ["sts.${var.dns_suffix}"]
+      variable = "${var.oidc_issuer}:aud"
+    }
+
+    condition {
+      test     = "StringEquals"
+      values   = ["system:serviceaccount:kube-system:${var.service_account_name}"]
+      variable = "${var.oidc_issuer}:sub"
+    }
+
+    principals {
+      type        = "Federated"
+      identifiers = ["arn:aws:iam::${var.aws_account_id}:oidc-provider/${var.oidc_issuer}"]
+    }
+  }
 }
 
-resource "kubernetes_service_account" "this" {
-  metadata {
-    name      = var.service_account_name
-    namespace = var.namespace
+data "aws_iam_policy_document" "policy" {
+  statement {
+    actions   = ["elasticfilesystem:DescribeAccessPoints"]
+    effect    = "Allow"
+    resources = ["arn:aws:elasticfilesystem:${var.aws_region}:${var.aws_account_id}:access-point/*"]
+  }
 
-    annotations = {
-      "eks.amazonaws.com/role-arn": aws_iam_role.this.arn
-    }
+  statement {
+    actions   = ["elasticfilesystem:DescribeFileSystems"]
+    effect    = "Allow"
+    resources = [aws_efs_file_system.this.arn]
+  }
 
-    labels = {
-      "app.kubernetes.io/name": var.release_name
+  statement {
+    actions   = ["elasticfilesystem:CreateAccessPoint"]
+    effect    = "Allow"
+    resources = ["*"]
+
+    condition {
+      test     = "StringLike"
+      values   = ["true"]
+      variable = "aws:RequestTag/efs.csi.aws.com/cluster"
     }
   }
 }
 
-resource "kubernetes_storage_class" "this" {
-  depends_on = [aws_efs_mount_target.this]
+locals {
+  values = yamlencode({
+    controller = {
+      serviceAccount = {
+        annotations = {
+          "eks.${var.dns_suffix}/role-arn" = aws_iam_role.this.arn
+        }
 
-  metadata {
-    name = var.storage_class_name
-    annotations = {
-      "storageclass.kubernetes.io/is-default-class": var.is_default
+        name = var.service_account_name
+      }
     }
-  }
 
-  parameters = {
-    directoryPerms   = "700"
-    fileSystemId     = aws_efs_file_system.this.id
-    provisioningMode = "efs-ap"
-  }
+    image = {
+      repository = "${var.eks_addon_repository}/eks/aws-efs-csi-driver"
+    }
 
-  storage_provisioner = "efs.csi.aws.com"
+    storageClasses = [{
+      allowVolumeExpansion = true
+
+      annotations = {
+        "storageclass.kubernetes.io/is-default-class" = tostring(var.is_default_class)
+      }
+
+      name = var.storage_class_name
+
+      parameters = {
+        directoryPerms   = "700"
+        fileSystemId     = aws_efs_file_system.this.id
+        provisioningMode = "efs-ap"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role" "this" {
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+  name_prefix        = "${var.cluster_name}_${var.release_name}"
+}
+
+resource "aws_iam_policy" "this" {
+  name_prefix = "${var.cluster_name}_${var.release_name}"
+  policy      = data.aws_iam_policy_document.policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "this" {
+  policy_arn = aws_iam_policy.this.arn
+  role       = aws_iam_role.this.name
 }
 
 resource "aws_efs_file_system" "this" {
-  tags = var.extra_tags
+
 }
 
 resource "aws_efs_mount_target" "this" {
@@ -54,11 +109,9 @@ resource "aws_efs_mount_target" "this" {
 }
 
 resource "aws_security_group" "this" {
-  description = "Security group for EFS mount targets"
-  name        = "${var.cluster_name}-efs"
+  description = "Security group for EFS mount targets in EKS cluster ${var.cluster_name}"
+  name        = "${var.cluster_name}-${var.release_name}"
   vpc_id      = var.vpc_id
-
-  tags = var.extra_tags
 }
 
 resource "aws_security_group_rule" "egress" {
@@ -79,121 +132,11 @@ resource "aws_security_group_rule" "ingress" {
   type                     = "ingress"
 }
 
-resource "aws_iam_policy" "this" {
-  name_prefix = "${var.cluster_name}_efs-csi-driver"
-
-  policy = <<EOT
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": ["elasticfilesystem:DescribeAccessPoints"],
-      "Resource": "arn:aws:elasticfilesystem:${var.aws_region}:${var.aws_account_id}:access-point/*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["elasticfilesystem:DescribeFileSystems"],
-      "Resource": "${aws_efs_file_system.this.arn}"
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["elasticfilesystem:CreateAccessPoint"],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/efs.csi.aws.com/cluster": "true"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": "elasticfilesystem:DeleteAccessPoint",
-      "Resource": "arn:aws:elasticfilesystem:${var.aws_region}:${var.aws_account_id}:access-point/*",
-      "Condition": {
-        "StringEquals": {
-          "aws:ResourceTag/efs.csi.aws.com/cluster": "true"
-        }
-      }
-    }
-  ]
-}
-EOT
-
-  tags = var.extra_tags
-}
-
-resource "aws_iam_role" "this" {
-  name_prefix = "${var.cluster_name}_efs-csi-driver"
-
-  assume_role_policy = <<EOT
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "${var.oidc_provider_arn}"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "${var.oidc_issuer}:sub": "system:serviceaccount:${var.namespace}:${var.service_account_name}"
-        }
-      }
-    }
-  ]
-}
-
-EOT
-
-  tags = var.extra_tags
-}
-
-resource "aws_iam_role_policy_attachment" "efs_csi_driver" {
-  policy_arn = aws_iam_policy.this.arn
-  role       = aws_iam_role.this.name
-}
-
-locals {
-  extra_tags = join("\n", [for k, v in var.extra_tags : "\"${k}\": \"${v}\""])
-  efs_driver_values = <<EOT
-controller:
-  extraVolumeTags:
-    ${indent(4, local.extra_tags)}
-  serviceAccount:
-    create: false
-    name: ${var.service_account_name}
-image:
-  repository: "${local.eks_addon_repository}/eks/aws-efs-csi-driver"
-EOT
-
-  eks_addon_repository = lookup(local.eks_addon_repository_map, var.aws_region)
-  eks_addon_repository_map = {
-    "af-south-1"     = "877085696533.dkr.ecr.af-south-1.amazonaws.com"
-    "ap-east-1"      = "800184023465.dkr.ecr.ap-east-1.amazonaws.com"
-    "ap-northeast-1" = "602401143452.dkr.ecr.ap-northeast-1.amazonaws.com"
-    "ap-northeast-2" = "602401143452.dkr.ecr.ap-northeast-2.amazonaws.com"
-    "ap-northeast-3" = "602401143452.dkr.ecr.ap-northeast-3.amazonaws.com"
-    "ap-south-1"     = "602401143452.dkr.ecr.ap-south-1.amazonaws.com"
-    "ap-southeast-1" = "602401143452.dkr.ecr.ap-southeast-1.amazonaws.com"
-    "ap-southeast-2" = "602401143452.dkr.ecr.ap-southeast-2.amazonaws.com"
-    "ca-central-1"   = "602401143452.dkr.ecr.ca-central-1.amazonaws.com"
-    "cn-north-1"     = "918309763551.dkr.ecr.cn-north-1.amazonaws.com.cn"
-    "cn-northwest-1" = "961992271922.dkr.ecr.cn-northwest-1.amazonaws.com.cn"
-    "eu-central-1"   = "602401143452.dkr.ecr.eu-central-1.amazonaws.com"
-    "eu-north-1"     = "602401143452.dkr.ecr.eu-north-1.amazonaws.com"
-    "eu-south-1"     = "590381155156.dkr.ecr.eu-south-1.amazonaws.com"
-    "eu-west-1"      = "602401143452.dkr.ecr.eu-west-1.amazonaws.com"
-    "eu-west-2"      = "602401143452.dkr.ecr.eu-west-2.amazonaws.com"
-    "eu-west-3"      = "602401143452.dkr.ecr.eu-west-3.amazonaws.com"
-    "me-south-1"     = "558608220178.dkr.ecr.me-south-1.amazonaws.com"
-    "sa-east-1"      = "602401143452.dkr.ecr.sa-east-1.amazonaws.com"
-    "us-east-1"      = "602401143452.dkr.ecr.us-east-1.amazonaws.com"
-    "us-east-2"      = "602401143452.dkr.ecr.us-east-2.amazonaws.com"
-    "us-gov-east-1"  = "151742754352.dkr.ecr.us-gov-east-1.amazonaws.com"
-    "us-gov-west-1"  = "013241004608.dkr.ecr.us-gov-west-1.amazonaws.com"
-    "us-west-1"      = "602401143452.dkr.ecr.us-west-1.amazonaws.com"
-    "us-west-2"      = "602401143452.dkr.ecr.us-west-2.amazonaws.com"
-  }
+resource "helm_release" "this" {
+  chart      = "aws-efs-csi-driver"
+  name       = var.release_name
+  namespace  = "kube-system"
+  repository = "https://kubernetes-sigs.github.io/aws-efs-csi-driver"
+  values     = [local.values]
+  version    = var.release_version
 }
