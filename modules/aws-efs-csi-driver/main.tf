@@ -4,12 +4,6 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
     condition {
       test     = "StringEquals"
-      values   = ["sts.${var.dns_suffix}"]
-      variable = "${var.oidc_issuer}:aud"
-    }
-
-    condition {
-      test     = "StringEquals"
       values   = ["system:serviceaccount:kube-system:${var.service_account_name}"]
       variable = "${var.oidc_issuer}:sub"
     }
@@ -21,46 +15,18 @@ data "aws_iam_policy_document" "assume_role_policy" {
   }
 }
 
-data "aws_iam_policy_document" "policy" {
-  statement {
-    actions   = ["elasticfilesystem:DescribeAccessPoints"]
-    effect    = "Allow"
-    resources = ["arn:aws:elasticfilesystem:${var.aws_region}:${var.aws_account_id}:access-point/*"]
-  }
-
-  statement {
-    actions   = ["elasticfilesystem:DescribeFileSystems"]
-    effect    = "Allow"
-    resources = [aws_efs_file_system.this.arn]
-  }
-
-  statement {
-    actions   = ["elasticfilesystem:CreateAccessPoint"]
-    effect    = "Allow"
-    resources = ["*"]
-
-    condition {
-      test     = "StringLike"
-      values   = ["true"]
-      variable = "aws:RequestTag/efs.csi.aws.com/cluster"
-    }
-  }
-}
-
 locals {
+  name_prefix = "${var.cluster_name}_${var.release_name}"
+
   values = yamlencode({
     controller = {
       serviceAccount = {
         annotations = {
-          "eks.${var.dns_suffix}/role-arn" = aws_iam_role.this.arn
+          "eks.amazonaws.com/role-arn" = aws_iam_role.this.arn
         }
 
         name = var.service_account_name
       }
-    }
-
-    image = {
-      repository = "${var.eks_addon_repository}/eks/aws-efs-csi-driver"
     }
 
     storageClasses = [{
@@ -81,14 +47,14 @@ locals {
   })
 }
 
-resource "aws_iam_role" "this" {
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
-  name_prefix        = "${var.cluster_name}_${var.release_name}"
+resource "aws_iam_policy" "this" {
+  name_prefix = substr(local.name_prefix, 0, 102)
+  policy      = file("${path.module}/policy.json")
 }
 
-resource "aws_iam_policy" "this" {
-  name_prefix = "${var.cluster_name}_${var.release_name}"
-  policy      = data.aws_iam_policy_document.policy.json
+resource "aws_iam_role" "this" {
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+  name_prefix        = substr(local.name_prefix, 0, 38)
 }
 
 resource "aws_iam_role_policy_attachment" "this" {
@@ -97,7 +63,9 @@ resource "aws_iam_role_policy_attachment" "this" {
 }
 
 resource "aws_efs_file_system" "this" {
-
+  tags = {
+    Name = local.name_prefix
+  }
 }
 
 resource "aws_efs_mount_target" "this" {
@@ -110,15 +78,19 @@ resource "aws_efs_mount_target" "this" {
 
 resource "aws_security_group" "this" {
   description = "Security group for EFS mount targets in EKS cluster ${var.cluster_name}"
-  name        = "${var.cluster_name}-${var.release_name}"
+  name_prefix = local.name_prefix
   vpc_id      = var.vpc_id
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_security_group_rule" "egress" {
   from_port                = 2049
   protocol                 = "tcp"
   security_group_id        = aws_security_group.this.id
-  source_security_group_id = var.source_security_group_id
+  source_security_group_id = var.node_security_group_id
   to_port                  = 2049
   type                     = "egress"
 }
@@ -127,7 +99,7 @@ resource "aws_security_group_rule" "ingress" {
   from_port                = 2049
   protocol                 = "tcp"
   security_group_id        = aws_security_group.this.id
-  source_security_group_id = var.source_security_group_id
+  source_security_group_id = var.node_security_group_id
   to_port                  = 2049
   type                     = "ingress"
 }

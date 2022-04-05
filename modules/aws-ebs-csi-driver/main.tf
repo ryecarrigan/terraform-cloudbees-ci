@@ -4,12 +4,6 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
     condition {
       test     = "StringEquals"
-      values   = ["sts.${var.dns_suffix}"]
-      variable = "${var.oidc_issuer}:aud"
-    }
-
-    condition {
-      test     = "StringEquals"
       values   = ["system:serviceaccount:kube-system:${var.service_account_name}"]
       variable = "${var.oidc_issuer}:sub"
     }
@@ -21,149 +15,9 @@ data "aws_iam_policy_document" "assume_role_policy" {
   }
 }
 
-data "aws_iam_policy_document" "policy" {
-  statement {
-    actions = [
-      "ec2:CreateSnapshot",
-      "ec2:AttachVolume",
-      "ec2:DetachVolume",
-      "ec2:ModifyVolume",
-      "ec2:DescribeAvailabilityZones",
-      "ec2:DescribeInstances",
-      "ec2:DescribeSnapshots",
-      "ec2:DescribeTags",
-      "ec2:DescribeVolumes",
-      "ec2:DescribeVolumesModifications",
-    ]
-
-    effect    = "Allow"
-    resources = ["*"]
-  }
-
-  statement {
-    actions = ["ec2:CreateTags"]
-    effect  = "Allow"
-
-    resources = [
-      "arn:aws:ec2:*:*:volume/*",
-      "arn:aws:ec2:*:*:snapshot/*",
-    ]
-
-    condition {
-      test     = "StringEquals"
-      values   = ["CreateVolume", "CreateSnapshot"]
-      variable = "ec2:CreateAction"
-    }
-  }
-
-  statement {
-    actions = ["ec2:DeleteTags"]
-    effect  = "Allow"
-
-    resources = [
-      "arn:aws:ec2:*:*:volume/*",
-      "arn:aws:ec2:*:*:snapshot/*",
-    ]
-  }
-
-  statement {
-    actions   = ["ec2:CreateVolume"]
-    effect    = "Allow"
-    resources = ["*"]
-
-    condition {
-      test     = "StringLike"
-      values   = ["true"]
-      variable = "aws:RequestTag/ebs.csi.aws.com/cluster"
-    }
-  }
-
-  statement {
-    actions   = ["ec2:CreateVolume"]
-    effect    = "Allow"
-    resources = ["*"]
-
-    condition {
-      test     = "StringLike"
-      values   = ["*"]
-      variable = "aws:RequestTag/CSIVolumeName"
-    }
-  }
-
-  statement {
-    actions   = ["ec2:CreateVolume"]
-    effect    = "Allow"
-    resources = ["*"]
-
-    condition {
-      test     = "StringLike"
-      values   = ["owned"]
-      variable = "aws:RequestTag/kubernetes.io/cluster/*"
-    }
-  }
-
-  statement {
-    actions   = ["ec2:DeleteVolume"]
-    effect    = "Allow"
-    resources = ["*"]
-
-    condition {
-      test     = "StringLike"
-      values   = ["true"]
-      variable = "ec2:ResourceTag/ebs.csi.aws.com/cluster"
-    }
-  }
-
-  statement {
-    actions   = ["ec2:DeleteVolume"]
-    effect    = "Allow"
-    resources = ["*"]
-
-    condition {
-      test     = "StringLike"
-      values   = ["*"]
-      variable = "ec2:ResourceTag/CSIVolumeName"
-    }
-  }
-
-  statement {
-    actions   = ["ec2:DeleteVolume"]
-    effect    = "Allow"
-    resources = ["*"]
-
-    condition {
-      test     = "StringLike"
-      values   = ["owned"]
-      variable = "ec2:ResourceTag/kubernetes.io/cluster/*"
-    }
-  }
-
-  statement {
-    actions   = ["ec2:DeleteSnapshot"]
-    effect    = "Allow"
-    resources = ["*"]
-
-    condition {
-      test     = "StringLike"
-      values   = ["*"]
-      variable = "ec2:ResourceTag/CSIVolumeSnapshotName"
-    }
-  }
-
-  statement {
-    actions   = ["ec2:DeleteSnapshot"]
-    effect    = "Allow"
-    resources = ["*"]
-
-    condition {
-      test     = "StringLike"
-      values   = ["true"]
-      variable = "ec2:ResourceTag/ebs.csi.aws.com/cluster"
-    }
-  }
-}
-
 locals {
+  name_prefix = "${var.cluster_name}_${var.release_name}"
+
   values = yamlencode({
     controller = {
       extraVolumeTags = var.volume_tags
@@ -178,10 +32,6 @@ locals {
     }
 
     enableVolumeSnapshot = true
-
-    image = {
-      repository = "${var.eks_addon_repository}/eks/aws-ebs-csi-driver"
-    }
 
     storageClasses = [{
       allowVolumeExpansion = true
@@ -200,14 +50,14 @@ locals {
   })
 }
 
-resource "aws_iam_role" "this" {
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
-  name_prefix        = "${var.cluster_name}_${var.release_name}"
+resource "aws_iam_policy" "this" {
+  name_prefix = substr(local.name_prefix, 0, 102)
+  policy      = file("${path.module}/policy.json")
 }
 
-resource "aws_iam_policy" "this" {
-  name_prefix = "${var.cluster_name}_${var.release_name}"
-  policy      = data.aws_iam_policy_document.policy.json
+resource "aws_iam_role" "this" {
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+  name_prefix        = substr(local.name_prefix, 0, 38)
 }
 
 resource "aws_iam_role_policy_attachment" "this" {

@@ -10,18 +10,13 @@ variable "cluster_name" {
   type = string
 }
 
-variable "dns_suffix" {
-  default = "amazonaws.com"
-  type    = string
-}
-
-variable "eks_addon_repository" {
-  type = string
-}
-
 variable "is_default_class" {
   default = false
   type    = bool
+}
+
+variable "node_security_group_id" {
+  type = string
 }
 
 variable "oidc_issuer" {
@@ -41,16 +36,12 @@ variable "release_version" {
 }
 
 variable "service_account_name" {
-  default = "aws-efs-csi-driver"
+  default = "efs-csi-controller-sa"
   type    = string
 }
 
-variable "source_security_group_id" {
-  type = string
-}
-
 variable "storage_class_name" {
-  default = "efs"
+  default = "efs-sc"
   type    = string
 }
 
