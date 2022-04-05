@@ -11,11 +11,24 @@ resource "helm_release" "this" {
   name       = var.release_name
   namespace  = var.namespace
   repository = "https://prometheus-community.github.io/helm-charts"
-  values     = [local.values]
+  values     = [local.grafana_values, local.prometheus_values]
 }
 
 locals {
-  values = <<EOT
+  grafana_values = yamlencode({
+    grafana = {
+      defaultDashboardsTimezone = "America/New_York"
+      ingress = {
+        annotations      = var.ingress_annotations
+        enabled          = true
+        extraPaths       = var.ingress_extra_paths
+        hosts            = [var.host_name]
+        ingressClassName = var.ingress_class_name
+      }
+    }
+  })
+
+  prometheus_values = <<EOT
 prometheus:
   additionalServiceMonitors:
     - name: cloudbees
@@ -49,17 +62,5 @@ prometheus:
               sourceLabels:
                 - __meta_kubernetes_endpoints_name
               targetLabel: __metrics_path__
-
-grafana:
-  defaultDashboardsTimezone: "America/New_York"
-  ingress:
-    enabled: true
-    annotations:
-      ${indent(6, var.ingress_annotations)}
-    extraPaths:
-      ${indent(6, var.ingress_extra_paths)}
-    ingressClassName: ${var.ingress_class_name}
-    hosts:
-      - ${var.host_name}
 EOT
 }

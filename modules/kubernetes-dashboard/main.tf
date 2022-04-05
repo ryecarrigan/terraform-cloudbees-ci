@@ -48,30 +48,34 @@ data "kubernetes_secret" "this" {
 }
 
 locals {
-  values = <<EOT
-ingress:
-  enabled: true
-  className: ${var.ingress_class_name}
-  hosts:
-    - ${var.host_name}
-  annotations:
-    alb.ingress.kubernetes.io/backend-protocol: HTTPS
-    ${indent(4, var.ingress_annotations)}
-  customPaths:
-    ${indent(4, var.ingress_redirect_path)}
-    - pathType: ImplementationSpecific
-      backend:
-        service:
-          name: kubernetes-dashboard
-          port:
-            name: https
-EOT
+  values = yamlencode({
+    ingress = {
+      className = var.ingress_class_name
+      enabled   = true
+      hosts     = [var.host_name]
+
+      annotations = merge(var.ingress_annotations, {
+        "alb.ingress.kubernetes.io/backend-protocol" = "HTTPS"
+      })
+    }
+  })
 }
 
 variable "host_name" {}
-variable "ingress_annotations" {}
-variable "ingress_redirect_path" {}
-variable "ingress_class_name" {}
+variable "ingress_annotations" {
+  default = {}
+  type    = map(string)
+}
+
+variable "ingress_redirect_path" {
+  default = {}
+  type    = any
+}
+
+variable "ingress_class_name" {
+  type = string
+}
+
 variable "namespace" {
   default = "kubernetes-dashboard"
 }

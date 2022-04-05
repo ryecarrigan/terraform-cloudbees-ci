@@ -1,9 +1,22 @@
 variable "cloudbees_ci_namespace" {}
 
-variable "host_name" {}
-variable "ingress_annotations" {}
-variable "ingress_class_name" {}
-variable "ingress_extra_paths" {}
+variable "host_name" {
+  type = string
+}
+
+variable "ingress_annotations" {
+  default = {}
+  type    = map(string)
+}
+
+variable "ingress_class_name" {
+  type = string
+}
+
+variable "ingress_extra_paths" {
+  default = null
+  type    = list(any)
+}
 
 variable "namespace" {
   default = "prometheus"
