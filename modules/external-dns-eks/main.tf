@@ -4,12 +4,6 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
     condition {
       test     = "StringEquals"
-      values   = ["sts.${var.dns_suffix}"]
-      variable = "${var.oidc_issuer}:aud"
-    }
-
-    condition {
-      test     = "StringEquals"
       values   = ["system:serviceaccount:kube-system:${var.service_account_name}"]
       variable = "${var.oidc_issuer}:sub"
     }
