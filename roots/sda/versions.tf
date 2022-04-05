@@ -3,7 +3,7 @@ terraform {
 
   required_providers {
     helm = {
-      version = ">= 2.3.0"
+      version = ">= 2.5.0"
     }
 
     # Not the same as hashicorp/http!

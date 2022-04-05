@@ -22,6 +22,10 @@ variable "install_ci" {
   type    = bool
 }
 
+variable "agent_image" {
+  default = ""
+}
+
 variable "ci_chart_version" {
   default = "3.41.6"
 }
@@ -30,12 +34,24 @@ variable "ci_namespace" {
   default = "cloudbees-ci"
 }
 
+variable "controller_image" {
+  default = ""
+}
+
 variable "oc_configmap_name" {
   default = "oc-casc-bundle"
 }
 
+variable "oc_image" {
+  default = ""
+}
+
 variable "secrets_file" {
   default = "values/secrets.yaml"
+}
+
+variable "storage_class" {
+  type = string
 }
 
 # Options for installing and configuring CloudBees CD/RO

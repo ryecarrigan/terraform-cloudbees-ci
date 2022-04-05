@@ -22,14 +22,17 @@ module "cloudbees_ci" {
   count  = local.install_ci ? 1 : 0
   source = "../../modules/cloudbees-ci"
 
+  agent_image         = var.agent_image
   bundle_data         = local.oc_bundle_data
   chart_version       = var.ci_chart_version
   controller_cpu      = 2
+  controller_image    = var.controller_image
   controller_memory   = 8
   host_name           = var.ci_host_name
   ingress_annotations = var.ingress_annotations
   ingress_class       = var.ingress_class
   oc_cpu              = 2
+  oc_image            = var.oc_image
   oc_memory           = 4
   namespace           = var.ci_namespace
   oc_configmap_name   = var.oc_configmap_name
