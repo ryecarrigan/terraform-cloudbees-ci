@@ -1,21 +1,38 @@
-variable "extra_tags" {
-  default = {}
-  type    = map(string)
-}
-
 variable "instance_type" {
   default = "t3.nano"
+  type    = string
 }
 
 variable "key_name" {
   default = ""
+  type    = string
 }
 
-variable "resource_prefix" {}
+variable "resource_prefix" {
+  type = string
+}
+
+variable "resource_suffix" {
+  default = "bastion"
+  type    = string
+}
+
 variable "ssh_cidr_blocks" {
   type = set(string)
 }
 
-variable "source_security_group_id" {}
-variable "subnet_id" {}
-variable "vpc_id" {}
+variable "source_security_group_id" {
+  type = string
+}
+variable "subnet_id" {
+  type = string
+}
+
+variable "tags" {
+  default = {}
+  type    = map(string)
+}
+
+variable "vpc_id" {
+  type = string
+}
