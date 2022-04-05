@@ -32,17 +32,28 @@ variable "dashboard_subdomain" {
 
 variable "domain_name" {}
 
-variable "eks_version" {
-  default = "1.21"
-}
-
-variable "extra_tags" {
-  default = {}
-  type    = map(string)
-}
-
 variable "grafana_subdomain" {
   default = "grafana"
+}
+
+variable "install_cdro" {
+  default = false
+  type    = bool
+}
+
+variable "install_ci" {
+  default = false
+  type    = bool
+}
+
+variable "install_kubernetes_dashboard" {
+  default = true
+  type    = bool
+}
+
+variable "install_prometheus" {
+  default = true
+  type    = bool
 }
 
 variable "instance_types" {
@@ -54,8 +65,18 @@ variable "key_name" {
   default = ""
 }
 
-variable "ssh_cidr" {
-  default = "0.0.0.0/32"
+variable "kubernetes_version" {
+  default = "1.21"
+}
+
+variable "ssh_cidr_blocks" {
+  default = ["0.0.0.0/32"]
+  type    = list(string)
+}
+
+variable "tags" {
+  default = {}
+  type    = map(string)
 }
 
 variable "zone_count" {
