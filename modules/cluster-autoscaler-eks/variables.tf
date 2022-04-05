@@ -1,13 +1,23 @@
-variable "cluster_name" {}
-
-variable "kubernetes_version" {}
-
-variable "namespace" {
-  default = "kube-system"
+variable "aws_account_id" {
+  type = string
 }
 
-variable "oidc_provider_arn" {}
-variable "oidc_issuer" {}
+variable "aws_region" {
+  type = string
+}
+
+variable "cluster_name" {
+  type = string
+}
+
+variable "kubernetes_version" {
+  type = string
+}
+
+variable "oidc_issuer" {
+  type = string
+}
+
 variable "patch_version" {
   default = 0
 }
@@ -23,5 +33,3 @@ variable "release_version" {
 variable "service_account_name" {
   default = "cluster-autoscaler"
 }
-
-variable "worker_asg_arns" {}
