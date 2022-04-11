@@ -155,6 +155,17 @@ module "eks" {
       subnet_ids = [module.vpc.private_subnets[index]]
     }
   }
+
+  node_security_group_additional_rules = {
+    ingress_self_all = {
+      description = "Node to node all ports/protocols"
+      protocol    = "-1"
+      from_port   = 0
+      to_port     = 0
+      type        = "ingress"
+      self        = true
+    }
+  }
 }
 
 
@@ -240,22 +251,20 @@ module "external_dns" {
 }
 
 module "kubernetes_dashboard" {
-  depends_on = [module.aws_load_balancer_controller]
   for_each   = var.install_kubernetes_dashboard ? local.this : []
   source     = "../../modules/kubernetes-dashboard"
 
-  host_name             = "${var.dashboard_subdomain}.${var.domain_name}"
-  ingress_annotations   = local.alb_annotations
-  ingress_class_name    = "alb"
+  host_name           = "${var.dashboard_subdomain}.${var.domain_name}"
+  ingress_annotations = local.alb_annotations
+  ingress_class_name  = module.aws_load_balancer_controller.ingress_class
 }
 
 module "prometheus" {
-  depends_on = [module.aws_load_balancer_controller]
   source     = "../../modules/prometheus"
 
   cloudbees_ci_namespace = var.ci_namespace
   host_name              = "${var.grafana_subdomain}.${var.domain_name}"
   ingress_annotations    = local.alb_annotations
-  ingress_class_name     = "alb"
+  ingress_class_name     = module.aws_load_balancer_controller.ingress_class
   ingress_extra_paths    = [local.alb_redirect_path]
 }
