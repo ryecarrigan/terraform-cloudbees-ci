@@ -23,6 +23,11 @@ variable "dns_suffix" {
   type    = string
 }
 
+variable "ingress_class_name" {
+  default = "alb"
+  type    = string
+}
+
 variable "node_security_group_id" {
   type = string
 }
