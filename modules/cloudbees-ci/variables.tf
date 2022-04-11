@@ -2,7 +2,9 @@ variable "agent_image" {
   default = ""
 }
 
-variable "bundle_data" {}
+variable "bundle_data" {
+  default = {}
+}
 
 variable "chart_repository" {
   default = "https://charts.cloudbees.com/public/cloudbees"
@@ -22,6 +24,10 @@ variable "controller_image" {
 variable "controller_memory" {
   default = 8
   type    = number
+}
+
+variable "extra_groovy_configuration" {
+  default = {}
 }
 
 variable "hibernation_enabled" {
@@ -63,6 +69,16 @@ variable "secret_mount_path" {
 
 variable "platform" {
   default = "standard"
+}
+
+variable "prometheus_labels" {
+  default = null
+  type    = map(string)
+}
+
+variable "prometheus_relabelings" {
+  default = []
+  type    = list(any)
 }
 
 variable "secret_data" {
