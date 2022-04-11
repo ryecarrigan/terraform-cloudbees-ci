@@ -26,6 +26,11 @@ variable "agent_image" {
   default = ""
 }
 
+variable "bundle_dir" {
+  default = "oc-casc-bundle"
+  type    = string
+}
+
 variable "ci_chart_version" {
   default = "3.41.6"
 }
@@ -38,12 +43,25 @@ variable "controller_image" {
   default = ""
 }
 
+variable "groovy_dir" {
+  default = "groovy-init"
+  type    = string
+}
+
 variable "oc_configmap_name" {
   default = "oc-casc-bundle"
 }
 
 variable "oc_image" {
   default = ""
+}
+
+variable "prometheus_labels" {
+  default = null
+}
+
+variable "prometheus_relabelings" {
+  default = []
 }
 
 variable "secrets_file" {

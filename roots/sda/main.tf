@@ -22,22 +22,25 @@ module "cloudbees_ci" {
   count  = local.install_ci ? 1 : 0
   source = "../../modules/cloudbees-ci"
 
-  agent_image         = var.agent_image
-  bundle_data         = local.oc_bundle_data
-  chart_version       = var.ci_chart_version
-  controller_cpu      = 2
-  controller_image    = var.controller_image
-  controller_memory   = 8
-  host_name           = var.ci_host_name
-  ingress_annotations = var.ingress_annotations
-  ingress_class       = var.ingress_class
-  oc_cpu              = 2
-  oc_image            = var.oc_image
-  oc_memory           = 4
-  namespace           = var.ci_namespace
-  oc_configmap_name   = var.oc_configmap_name
-  platform            = var.platform
-  secret_data         = local.oc_secret_data
+  agent_image                = var.agent_image
+  bundle_data                = local.oc_bundle_data
+  chart_version              = var.ci_chart_version
+  controller_cpu             = 2
+  controller_image           = var.controller_image
+  controller_memory          = 8
+  extra_groovy_configuration = local.oc_groovy_data
+  host_name                  = var.ci_host_name
+  ingress_annotations        = var.ingress_annotations
+  ingress_class              = var.ingress_class
+  oc_cpu                     = 2
+  oc_image                   = var.oc_image
+  oc_memory                  = 4
+  namespace                  = var.ci_namespace
+  oc_configmap_name          = var.oc_configmap_name
+  platform                   = var.platform
+  prometheus_labels          = var.prometheus_labels
+  prometheus_relabelings     = var.prometheus_relabelings
+  secret_data                = local.oc_secret_data
 }
 
 module "mysql" {
@@ -59,6 +62,8 @@ locals {
   install_mysql   = alltrue([var.install_mysql, var.database_password != "", var.mysql_root_password != ""])
   mysql_endpoint  = local.install_mysql ? concat(module.mysql.*.dns_name, [""])[0] : var.database_endpoint
   oc_bundle_data  =  { for file in fileset(local.oc_bundle_dir, "*.{yml,yaml}") : file => file("${local.oc_bundle_dir}/${file}") }
-  oc_bundle_dir   = "${path.module}/oc-casc-bundle"
+  oc_bundle_dir   = "${path.module}/${var.bundle_dir}"
+  oc_groovy_data  = { for file in fileset(local.oc_groovy_dir, "*.groovy") : file => file("${local.oc_groovy_dir}/${file}") }
+  oc_groovy_dir   = "${path.module}/${var.groovy_dir}"
   oc_secret_data  = fileexists(var.secrets_file) ? yamldecode(file(var.secrets_file)) : {}
 }
