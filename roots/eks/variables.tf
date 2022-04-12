@@ -11,12 +11,9 @@ variable "bastion_enabled" {
   type    = bool
 }
 
-variable "cd_subdomain" {}
 variable "ci_namespace" {
   default = "cloudbees-ci"
 }
-
-variable "ci_subdomain" {}
 
 variable "cidr_block" {
   default = "10.0.0.0/16"
