@@ -1,6 +1,6 @@
 # Required variables
 cluster_name = # Will be appended with terraform workspace name (unless default)
-domain_name =
+domain_name = # Must be an existing Route53 zone
 
 # Optional variables
 #bastion_enabled # Defaults to false
