@@ -1,3 +1,12 @@
+data "kubernetes_ingress" "cjoc" {
+  depends_on = [helm_release.this]
+
+  metadata {
+    name      = "cjoc"
+    namespace = var.namespace
+  }
+}
+
 resource "kubernetes_namespace" "this" {
   metadata {
     name = var.namespace

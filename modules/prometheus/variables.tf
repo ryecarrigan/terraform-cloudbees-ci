@@ -1,5 +1,3 @@
-variable "cloudbees_ci_namespace" {}
-
 variable "host_name" {
   type = string
 }

@@ -1,19 +1,26 @@
 # Required variables
-variable "ci_host_name" {}
-variable "ingress_class" {}
-variable "kubeconfig_file" {}
-
-# Common configuration
-variable "chart_repository" {
-  default = "https://charts.cloudbees.com/public/cloudbees"
-}
-
-variable "ingress_annotations" {
-  default = "{}"
+variable "ingress_class" {
+  type = string
 }
 
 variable "platform" {
-  default = "standard"
+  type = string
+
+  validation {
+    condition     = contains(["eks"], var.platform)
+    error_message = "Not a tested/supported platform."
+  }
+}
+
+# Common configuration
+variable "kubeconfig_file" {
+  default = "~/.kube/config"
+  type    = string
+}
+
+variable "tags" {
+  default = {}
+  type    = map(string)
 }
 
 # Options for installing and configuring CloudBees CI
@@ -31,16 +38,29 @@ variable "bundle_dir" {
   type    = string
 }
 
+variable "ci_chart_repository" {
+  default = "https://charts.cloudbees.com/public/cloudbees"
+  type    = string
+}
+
 variable "ci_chart_version" {
-  default = "3.41.6"
+  default = "3.42.6"
+  type    = string
+}
+
+variable "ci_host_name" {
+  default = ""
+  type    = string
 }
 
 variable "ci_namespace" {
   default = "cloudbees-ci"
+  type    = string
 }
 
 variable "controller_image" {
   default = ""
+  type    = string
 }
 
 variable "groovy_dir" {
@@ -50,26 +70,22 @@ variable "groovy_dir" {
 
 variable "oc_configmap_name" {
   default = "oc-casc-bundle"
+  type    = string
 }
 
 variable "oc_image" {
   default = ""
-}
-
-variable "prometheus_labels" {
-  default = null
-}
-
-variable "prometheus_relabelings" {
-  default = []
+  type    = string
 }
 
 variable "secrets_file" {
   default = "values/secrets.yaml"
+  type    = string
 }
 
 variable "storage_class" {
-  type = string
+  default = ""
+  type    = string
 }
 
 # Options for installing and configuring CloudBees CD/RO
@@ -80,42 +96,52 @@ variable "install_cdro" {
 
 variable "cd_admin_password" {
   default = ""
+  type    = string
 }
 
 variable "cd_chart_version" {
   default = "2.13.2"
+  type    = string
 }
 
 variable "cd_host_name" {
   default = ""
+  type    = string
 }
 
 variable "cd_license_file" {
   default = "values/license.xml"
+  type    = string
 }
 
 variable "cd_namespace" {
   default = "cloudbees-cd"
+  type    = string
 }
 
 variable "database_endpoint" {
   default = ""
+  type    = string
 }
 
 variable "database_name" {
   default = "flowdb"
+  type    = string
 }
 
 variable "database_password" {
   default = ""
+  type    = string
 }
 
 variable "database_user" {
   default = "flow"
+  type    = string
 }
 
 variable "rwx_storage_class" {
   default = ""
+  type    = string
 }
 
 # Options for installing and configuring a MySQL release
@@ -126,4 +152,5 @@ variable "install_mysql" {
 
 variable "mysql_root_password" {
   default = ""
+  type    = string
 }

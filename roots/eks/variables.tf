@@ -1,55 +1,45 @@
-variable "aws_profile" {
-  default = null
+# Required variables
+variable "cluster_name" {
+  type = string
 }
 
-variable "aws_region" {
-  default = "us-east-1"
+variable "domain_name" {
+  type = string
 }
 
+# Optional variables
 variable "bastion_enabled" {
   default = false
   type    = bool
 }
 
-variable "ci_namespace" {
-  default = "cloudbees-ci"
-}
-
 variable "cidr_block" {
   default = "10.0.0.0/16"
-}
+  type    = string
 
-variable "cluster_name" {
-  default = "terraform-cloudbees-ci"
+  validation {
+    condition     = try(cidrhost(var.cidr_block, 0), null) != null
+    error_message = "CIDR block was not in a valid CIDR format."
+  }
 }
 
 variable "dashboard_subdomain" {
   default = "dashboard"
+  type    = string
 }
-
-variable "domain_name" {}
 
 variable "grafana_subdomain" {
   default = "grafana"
-}
-
-variable "install_cdro" {
-  default = false
-  type    = bool
-}
-
-variable "install_ci" {
-  default = false
-  type    = bool
+  type    = string
 }
 
 variable "install_kubernetes_dashboard" {
-  default = true
+  default = false
   type    = bool
 }
 
 variable "install_prometheus" {
-  default = true
+  default = false
   type    = bool
 }
 
@@ -60,15 +50,27 @@ variable "instance_types" {
 
 variable "key_name" {
   default = ""
+  type    = string
 }
 
 variable "kubernetes_version" {
   default = "1.21"
+  type    = string
+
+  validation {
+    condition     = contains(["1.19", "1.20", "1.21"], var.kubernetes_version)
+    error_message = "Provided Kubernetes version is not supported by EKS and/or CloudBees."
+  }
 }
 
 variable "ssh_cidr_blocks" {
   default = ["0.0.0.0/32"]
   type    = list(string)
+
+  validation {
+    condition     = contains([for block in var.ssh_cidr_blocks : try(cidrhost(block, 0), "")], "") == false
+    error_message = "List of SSH CIDR blocks contains an invalid CIDR block."
+  }
 }
 
 variable "tags" {

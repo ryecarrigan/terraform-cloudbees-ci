@@ -25,12 +25,7 @@ variable "namespace" {
 
 variable "ci_oc_url" {}
 
-variable "platform" {
-  validation {
-    condition     = contains(["eks"], var.platform)
-    error_message = "Not a supported platform."
-  }
-}
+variable "platform" {}
 
 variable "release_name" {
   default = "cloudbees-cd"

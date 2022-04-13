@@ -10,24 +10,9 @@ eks: roots/eks
 .PHONY: eks-context
 eks-context:
 	@cd roots/eks && \
-		aws eks update-kubeconfig --name  `terraform output -raw cluster_id` && \
-		kubectl config use-context `terraform output -raw cluster_arn`
-ifdef CI_NAMESPACE
-	@cd roots/eks && \
-		kubectl config set-context `terraform output -raw cluster_arn` --namespace=$(CI_NAMESPACE)
-endif
-
-
-eks-create:
-	make eks ACTION="apply -auto-approve"
-	make eks-context
-	make sda ACTION="apply -auto-approve"
-	bash wait_for_cjoc.sh
-
-
-eks-destroy:
-	make sda ACTION="destroy -auto-approve"
-	make eks ACTION="destroy -auto-approve"
+		eval `terraform output -raw update_kubeconfig_command` && \
+		eval `terraform output -raw update_kubectl_context_command` && \
+		kubectl annotate --overwrite storageclass gp2 storageclass.kubernetes.io/is-default-class=false
 
 
 .PHONY: sda

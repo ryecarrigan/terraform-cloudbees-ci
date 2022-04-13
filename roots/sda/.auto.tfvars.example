@@ -1,33 +1,43 @@
-# Required variables
-ci_host_name =
+# Required common variables
 ingress_class =
-kubeconfig_file =
+platform =
 
-# Common configuration
-#chart_repository =
-#ingress_annotations =
-#platform =
+# Optional common variables
+#kubeconfig_file = # Defaults to "~/.kube/config"
+#tags = # Defaults to empty map
 
 # Options for installing and configuring CloudBees CI
 install_ci = true
-#ci_chart_version =
-#ci_namespace =
-#oc_configmap_name =
-#secrets_file =
+ci_host_name = # required if `install_ci = true`
+
+#agent_image = # Defaults to empty string, which will be interpreted as latest for the chart version
+#bundle_dir = # Defaults to "oc-casc-bundle"
+#ci_chart_repository = "s3://charts.staging.core-mp/cloudbees-staging"
+#ci_chart_version = # Defaults to latest hard-coded in variables
+#ci_namespace = # Defaults to "cloudbees-ci"
+#controller_image = # Defaults to empty string, which will be interpreted as latest for the chart version
+#groovy_dir = # Defaults to "groovy-init"
+#oc_configmap_name = # Defaults to "oc-casc-bundle"
+#oc_image = # Defaults to empty string, which will be interpreted as latest for the chart version
+#secrets_file = # Defaults to "values/secrets.yaml"
+#storage_class = # Defaults to empty string, which will be interpreted as default StorageClass
+
 
 # Options for installing and configuring CloudBees CD/RO
 install_cdro = true
-#cd_admin_password =
-#cd_chart_version =
-#cd_host_name =
-#cd_license_file =
-#cd_namespace =
-#database_endpoint =
-#database_name =
-#database_password =
-#database_user =
-#rwx_storage_class =
+cd_admin_password = # required if `install_cdro = true`
+cd_host_name = # required if `install_cdro = true`
+database_password = # required if `install_cdro = true`
+
+#cd_chart_version = # Defaults to latest hard-coded in variables
+#cd_license_file = # Defaults to "values/license.xml"
+#cd_namespace = # Defaults for "cloudbees-cd"
+#database_endpoint = # required if `install_cdro = true` and `install_mysql = false`
+#database_name = # Defaults to "flowdb"
+#database_user = # Defaults to "flow"
+#rwx_storage_class = # Defaults to empty string, which will be interpreted as default StorageClass
 
 # Options for installing and configuring a MySQL release
-#install_mysql = true
-#mysql_root_password =
+# The database name, user, and password will be taken from the CD/RO variables
+install_mysql = true
+mysql_root_password = # required if `install_mysql = true`
