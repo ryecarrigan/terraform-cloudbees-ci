@@ -9,7 +9,6 @@ provider "aws" {
 
 provider "kubernetes" {
   host                   = local.cluster_endpoint
-
   cluster_ca_certificate = local.cluster_ca_certificate
   token                  = local.cluster_auth_token
 }
@@ -24,7 +23,6 @@ provider "helm" {
 
 data "aws_caller_identity" "current" {}
 data "aws_availability_zones" "available" {}
-data "aws_partition" "current" {}
 
 data "aws_eks_cluster_auth" "auth" {
   name = module.eks.cluster_id
@@ -37,7 +35,6 @@ data "aws_route53_zone" "domain" {
 locals {
   availability_zones     = slice(data.aws_availability_zones.available.names, 0, var.zone_count)
   aws_account_id         = data.aws_caller_identity.current.account_id
-  dns_suffix             = data.aws_partition.current.dns_suffix
   cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
   cluster_endpoint       = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
@@ -53,11 +50,10 @@ locals {
     "alb.ingress.kubernetes.io/actions.ssl-redirect" = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}"
     "alb.ingress.kubernetes.io/listen-ports"         = "[{\"HTTP\": 80}, {\"HTTPS\":443}]"
     "alb.ingress.kubernetes.io/scheme"               = "internet-facing"
-    "alb.ingress.kubernetes.io/tags"                 = join(",", local.alb_tags)
+    "alb.ingress.kubernetes.io/tags"                 = join(",", [for k, v in var.tags : "${k}=${v}"])
     "alb.ingress.kubernetes.io/target-type"          = "ip"
   }
 
-  alb_tags = [for k, v in var.tags : "${k}=${v}"]
   alb_redirect_path = {
     pathType = "ImplementationSpecific"
     backend = {
@@ -251,8 +247,8 @@ module "external_dns" {
 }
 
 module "kubernetes_dashboard" {
-  for_each   = var.install_kubernetes_dashboard ? local.this : []
-  source     = "../../modules/kubernetes-dashboard"
+  for_each = var.install_kubernetes_dashboard ? local.this : []
+  source   = "../../modules/kubernetes-dashboard"
 
   host_name           = "${var.dashboard_subdomain}.${var.domain_name}"
   ingress_annotations = local.alb_annotations
@@ -260,7 +256,8 @@ module "kubernetes_dashboard" {
 }
 
 module "prometheus" {
-  source     = "../../modules/prometheus"
+  for_each = var.install_prometheus ? local.this : []
+  source   = "../../modules/prometheus"
 
   cloudbees_ci_namespace = var.ci_namespace
   host_name              = "${var.grafana_subdomain}.${var.domain_name}"
