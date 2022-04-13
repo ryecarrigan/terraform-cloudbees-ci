@@ -26,6 +26,11 @@ variable "controller_memory" {
   type    = number
 }
 
+variable "create_servicemonitors" {
+  default = false
+  type    = bool
+}
+
 variable "extra_groovy_configuration" {
   default = {}
 }

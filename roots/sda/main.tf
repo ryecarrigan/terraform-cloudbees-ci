@@ -84,6 +84,7 @@ module "cloudbees_ci" {
   controller_cpu             = 2
   controller_image           = var.controller_image
   controller_memory          = 8
+  create_servicemonitors     = var.create_servicemonitors
   extra_groovy_configuration = local.oc_groovy_data
   host_name                  = var.ci_host_name
   ingress_annotations        = local.ingress_annotations

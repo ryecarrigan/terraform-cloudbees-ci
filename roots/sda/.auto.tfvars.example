@@ -16,6 +16,7 @@ ci_host_name = # required if `install_ci = true`
 #ci_chart_version = # Defaults to latest hard-coded in variables
 #ci_namespace = # Defaults to "cloudbees-ci"
 #controller_image = # Defaults to empty string, which will be interpreted as latest for the chart version
+#create_servicemonitors = # Defaults to false
 #groovy_dir = # Defaults to "groovy-init"
 #oc_configmap_name = # Defaults to "oc-casc-bundle"
 #oc_image = # Defaults to empty string, which will be interpreted as latest for the chart version

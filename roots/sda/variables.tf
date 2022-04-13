@@ -33,6 +33,11 @@ variable "agent_image" {
   default = ""
 }
 
+variable "create_servicemonitors" {
+  default = false
+  type    = bool
+}
+
 variable "bundle_dir" {
   default = "oc-casc-bundle"
   type    = string

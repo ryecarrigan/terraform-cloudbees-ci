@@ -50,7 +50,7 @@ resource "kubernetes_secret" "secrets" {
 }
 
 resource "kubernetes_manifest" "service_monitor" {
-  for_each = { for k, v in local.service_monitors : k => v if (var.prometheus_labels != null) }
+  for_each = { for k, v in local.service_monitors : k => v if var.create_servicemonitors && (var.prometheus_labels != null) }
 
   manifest = {
     apiVersion = "monitoring.coreos.com/v1"
