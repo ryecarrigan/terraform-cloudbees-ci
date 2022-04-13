@@ -1,4 +1,0 @@
-[submodule "roots/sda/oc-casc-bundle"]
-	path = roots/sda/oc-casc-bundle
-	url = git@github.com:ryecarrigan/oc-casc-bundle.git
-	branch = main
