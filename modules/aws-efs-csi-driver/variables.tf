@@ -23,6 +23,16 @@ variable "oidc_issuer" {
   type = string
 }
 
+variable "partition_dns" {
+  default = "amazonaws.com"
+  type    = string
+}
+
+variable "partition_id" {
+  default = "aws"
+  type    = string
+}
+
 variable "private_subnet_ids" {
   type = list(string)
 }

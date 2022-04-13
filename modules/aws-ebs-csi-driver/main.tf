@@ -10,7 +10,7 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
     principals {
       type        = "Federated"
-      identifiers = ["arn:aws:iam::${var.aws_account_id}:oidc-provider/${var.oidc_issuer}"]
+      identifiers = ["arn:${var.partition_id}:iam::${var.aws_account_id}:oidc-provider/${var.oidc_issuer}"]
     }
   }
 }
@@ -24,7 +24,7 @@ locals {
 
       serviceAccount = {
         annotations = {
-          "eks.amazonaws.com/role-arn" = aws_iam_role.this.arn
+          "eks.${var.partition_dns}/role-arn" = aws_iam_role.this.arn
         }
 
         name = var.service_account_name

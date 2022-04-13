@@ -9,13 +9,11 @@ locals {
     serviceAccount = {
       name = var.service_account_name
       annotations = {
-        "eks.${var.dns_suffix}/role-arn": aws_iam_role.this.arn
+        "eks.${var.partition_dns}/role-arn": aws_iam_role.this.arn
       }
     }
   })
 }
-
-data "aws_partition" "current" {}
 
 data "aws_iam_policy_document" "assume_role_policy" {
   statement {
@@ -23,7 +21,7 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
     condition {
       test     = "StringEquals"
-      values   = ["sts.${var.dns_suffix}"]
+      values   = ["sts.${var.partition_dns}"]
       variable = "${var.oidc_issuer}:aud"
     }
 
@@ -35,7 +33,7 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
     principals {
       type        = "Federated"
-      identifiers = ["arn:aws:iam::${var.aws_account_id}:oidc-provider/${var.oidc_issuer}"]
+      identifiers = ["arn:${var.partition_id}:iam::${var.aws_account_id}:oidc-provider/${var.oidc_issuer}"]
     }
   }
 }

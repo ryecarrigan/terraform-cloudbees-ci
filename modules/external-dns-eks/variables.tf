@@ -6,17 +6,22 @@ variable "cluster_name" {
   type = string
 }
 
-variable "dns_suffix" {
-  default = "amazonaws.com"
-  type    = string
-}
-
 variable "namespace" {
   default = "kube-system"
 }
 
 variable "oidc_issuer" {
   type = string
+}
+
+variable "partition_dns" {
+  default = "amazonaws.com"
+  type    = string
+}
+
+variable "partition_id" {
+  default = "aws"
+  type    = string
 }
 
 variable "release_name" {

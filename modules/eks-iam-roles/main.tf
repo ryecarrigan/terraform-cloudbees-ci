@@ -1,12 +1,10 @@
-data "aws_partition" "current" {}
-
 data "aws_iam_policy_document" "cluster" {
   statement {
     actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
-      identifiers = ["eks.${data.aws_partition.current.dns_suffix}"]
+      identifiers = ["eks.${var.partition_dns}"]
     }
   }
 }
@@ -17,13 +15,13 @@ data "aws_iam_policy_document" "node" {
 
     principals {
       type        = "Service"
-      identifiers = ["ec2.${data.aws_partition.current.dns_suffix}"]
+      identifiers = ["ec2.${var.partition_dns}"]
     }
   }
 }
 
 locals {
-  iam_role_policy_prefix = "arn:${data.aws_partition.current.partition}:iam::aws:policy"
+  iam_role_policy_prefix = "arn:${var.partition_id}:iam::aws:policy"
 }
 
 resource "aws_iam_role" "cluster" {

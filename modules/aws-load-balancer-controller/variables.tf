@@ -18,11 +18,6 @@ variable "cluster_security_group_id" {
   type = string
 }
 
-variable "dns_suffix" {
-  default = "amazonaws.com"
-  type    = string
-}
-
 variable "ingress_class_name" {
   default = "alb"
   type    = string
@@ -34,6 +29,16 @@ variable "node_security_group_id" {
 
 variable "oidc_issuer" {
   type = string
+}
+
+variable "partition_dns" {
+  default = "amazonaws.com"
+  type    = string
+}
+
+variable "partition_id" {
+  default = "aws"
+  type    = string
 }
 
 variable "release_name" {
