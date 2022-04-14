@@ -102,7 +102,8 @@ module "vpc" {
 }
 
 module "bastion" {
-  source = "../../modules/aws-bastion"
+  for_each = var.bastion_enabled ? local.this : []
+  source   = "../../modules/aws-bastion"
 
   key_name                 = var.key_name
   resource_prefix          = local.cluster_name
@@ -184,14 +185,8 @@ module "acm_certificate" {
 # Kubernetes resources
 ################################################################################
 
-data "http" "wait_for_cluster" {
-  ca_certificate = local.cluster_ca_certificate
-  timeout        = 300
-  url            = "${module.eks.cluster_endpoint}/healthz"
-}
-
 module "aws_load_balancer_controller" {
-  depends_on = [data.aws_eks_cluster_auth.auth]
+  depends_on = [module.eks]
   source     = "../../modules/aws-load-balancer-controller"
 
   aws_account_id            = local.aws_account_id
@@ -203,7 +198,7 @@ module "aws_load_balancer_controller" {
 }
 
 module "cluster_autoscaler" {
-  depends_on = [data.aws_eks_cluster_auth.auth]
+  depends_on = [module.eks]
   source     = "../../modules/cluster-autoscaler-eks"
 
   aws_account_id     = local.aws_account_id
@@ -215,7 +210,7 @@ module "cluster_autoscaler" {
 }
 
 module "ebs_driver" {
-  depends_on = [data.aws_eks_cluster_auth.auth]
+  depends_on = [module.eks]
   source     = "../../modules/aws-ebs-csi-driver"
 
   aws_account_id   = local.aws_account_id
