@@ -231,7 +231,7 @@ module "ebs_driver" {
 }
 
 module "efs_driver" {
-  depends_on = [data.aws_eks_cluster_auth.auth]
+  depends_on = [module.eks]
   source     = "../../modules/aws-efs-csi-driver"
 
   aws_account_id         = local.aws_account_id
@@ -244,7 +244,7 @@ module "efs_driver" {
 }
 
 module "external_dns" {
-  depends_on = [data.aws_eks_cluster_auth.auth]
+  depends_on = [module.eks]
   source     = "../../modules/external-dns-eks"
 
   aws_account_id  = local.aws_account_id
