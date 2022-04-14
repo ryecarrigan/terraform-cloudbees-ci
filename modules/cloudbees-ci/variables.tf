@@ -12,18 +12,8 @@ variable "chart_repository" {
 
 variable "chart_version" {}
 
-variable "controller_cpu" {
-  default = 2
-  type    = number
-}
-
 variable "controller_image" {
   default = ""
-}
-
-variable "controller_memory" {
-  default = 4
-  type    = number
 }
 
 variable "create_servicemonitors" {

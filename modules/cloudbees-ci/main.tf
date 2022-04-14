@@ -141,9 +141,6 @@ locals {
     "Persistence.StorageClass"           = var.storage_class
   }
 
-  oc_heap_size         = "${var.oc_memory / 2}G"
-  controller_heap_size = "${var.controller_memory / 2}G"
-
   service_monitors = {
     cjoc = {
       matchLabels = {
@@ -184,14 +181,7 @@ locals {
         Annotations = var.ingress_annotations
       }
 
-      ContainerEnv = [
-        {
-          name  = "MASTER_JAVA_OPTIONS"
-          value = "-Xms${local.controller_heap_size} -Xmx${local.controller_heap_size}"
-        },
-      ]
-
-      JavaOpts = "-Xms${local.oc_heap_size} -Xmx${local.oc_heap_size} -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.enablePluginCatalogInOC=true -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true"
+      JavaOpts = "-Xms${var.oc_memory / 2}g -Xmx${var.oc_memory / 2}g -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.enablePluginCatalogInOC=true -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true"
 
       ExtraGroovyConfiguration = var.extra_groovy_configuration
     }

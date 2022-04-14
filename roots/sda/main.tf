@@ -81,9 +81,7 @@ module "cloudbees_ci" {
   agent_image                = var.agent_image
   bundle_data                = local.oc_bundle_data
   chart_version              = var.ci_chart_version
-  controller_cpu             = 2
   controller_image           = var.controller_image
-  controller_memory          = 8
   create_servicemonitors     = var.create_servicemonitors
   extra_groovy_configuration = local.oc_groovy_data
   host_name                  = var.ci_host_name
