@@ -39,6 +39,7 @@ locals {
   cluster_endpoint       = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   cluster_name           = "${var.cluster_name}${local.workspace_suffix}"
+  ingress_class_name     = "alb"
   oidc_issuer            = trimprefix(module.eks.cluster_oidc_issuer_url, "https://")
   oidc_provider_arn      = module.eks.oidc_provider_arn
   this                   = toset(["this"])
@@ -249,20 +250,22 @@ module "external_dns" {
 }
 
 module "kubernetes_dashboard" {
-  for_each = var.install_kubernetes_dashboard ? local.this : []
-  source   = "../../modules/kubernetes-dashboard"
+  depends_on = [module.aws_load_balancer_controller]
+  for_each   = var.install_kubernetes_dashboard ? local.this : []
+  source     = "../../modules/kubernetes-dashboard"
 
   host_name           = "${var.dashboard_subdomain}.${var.domain_name}"
   ingress_annotations = local.alb_annotations
-  ingress_class_name  = module.aws_load_balancer_controller.ingress_class
+  ingress_class_name  = local.ingress_class_name
 }
 
 module "prometheus" {
-  for_each = var.install_prometheus ? local.this : []
-  source   = "../../modules/prometheus"
+  depends_on = [module.aws_load_balancer_controller]
+  for_each   = var.install_prometheus ? local.this : []
+  source     = "../../modules/prometheus"
 
   host_name           = "${var.grafana_subdomain}.${var.domain_name}"
   ingress_annotations = local.alb_annotations
-  ingress_class_name  = module.aws_load_balancer_controller.ingress_class
+  ingress_class_name  = local.ingress_class_name
   ingress_extra_paths = [local.alb_redirect_path]
 }

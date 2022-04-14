@@ -4,7 +4,6 @@ locals {
   values = yamlencode({
     clusterName = var.cluster_name
     createIngressClassResource = true
-    ingressClass = var.ingress_class_name
 
     serviceAccount = {
       name = var.service_account_name
