@@ -6,18 +6,16 @@ terraform {
       version = ">= 2.5.0"
     }
 
-    # Not the same as hashicorp/http!
-    http = {
-      source  = "terraform-aws-modules/http"
-      version = ">= 2.4.1"
-    }
-
     kubernetes = {
       version = ">= 2.5.0"
     }
 
     template = {
       version = ">= 2.2.0"
+    }
+
+    time = {
+      version = ">= 0.7.2"
     }
   }
 }

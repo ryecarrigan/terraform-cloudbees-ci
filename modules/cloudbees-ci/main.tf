@@ -7,6 +7,55 @@ data "kubernetes_ingress" "cjoc" {
   }
 }
 
+locals {
+  create_bundle = length(var.bundle_data) != 0
+  create_secret = length(var.secret_data) != 0
+
+  bundle = concat([for values in [local.bundle_values] : local.bundle_values if local.create_bundle], [""])[0]
+  bundle_values = yamlencode({
+    OperationsCenter = {
+      CasC = {
+        Enabled = true
+      }
+
+      ConfigMapName = var.oc_configmap_name
+    }
+  })
+
+  secrets = concat([for values in [local.secret_values] : local.secret_values if local.create_secret], [""])[0]
+  secret_values = yamlencode({
+    OperationsCenter = {
+      ContainerEnv = [
+        {
+          name  = "SECRETS"
+          value = var.secret_mount_path
+        }
+      ]
+
+      ExtraVolumes = [{
+        name = var.oc_secret_name
+        secret = {
+          defaultMode = 0400
+          secretName  = var.oc_secret_name
+        }
+      }]
+
+      ExtraVolumeMounts = [{
+        name      = var.oc_secret_name
+        mountPath = var.secret_mount_path
+      }]
+    }
+  })
+}
+
+
+resource "time_sleep" "wait" {
+  depends_on = [kubernetes_namespace.this]
+
+  destroy_duration = "15s"
+}
+
+
 resource "kubernetes_namespace" "this" {
   metadata {
     name = var.namespace
@@ -14,11 +63,13 @@ resource "kubernetes_namespace" "this" {
 }
 
 resource "helm_release" "this" {
+  depends_on = [time_sleep.wait]
+
   chart      = "cloudbees-core"
   name       = "cloudbees-ci"
   namespace  = var.namespace
   repository = var.chart_repository
-  values     = [local.values]
+  values     = [local.values, local.secrets, local.bundle]
   version    = var.chart_version
 
   # Dynamically set values if the associated vars are set
@@ -32,6 +83,8 @@ resource "helm_release" "this" {
 }
 
 resource "kubernetes_config_map" "casc_bundle" {
+  for_each = local.create_bundle ? local.this : []
+
   metadata {
     name      = var.oc_configmap_name
     namespace = var.namespace
@@ -41,6 +94,8 @@ resource "kubernetes_config_map" "casc_bundle" {
 }
 
 resource "kubernetes_secret" "secrets" {
+  for_each = local.create_secret ? local.this : []
+
   metadata {
     name      = var.oc_secret_name
     namespace = var.namespace
@@ -108,10 +163,6 @@ locals {
 
   values = yamlencode({
     OperationsCenter = {
-      CasC = {
-        Enabled = true
-      }
-
       Platform = var.platform
       HostName = var.host_name
       Protocol = "https"
@@ -135,35 +186,14 @@ locals {
 
       ContainerEnv = [
         {
-          name  = "SECRETS"
-          value = var.secret_mount_path
-        },
-        {
           name  = "MASTER_JAVA_OPTIONS"
-          value = "-Xms${local.controller_heap_size} -Xmx${local.controller_heap_size} -Dhudson.slaves.NodeProvisioner.initialDelay=0 -XshowSettings:vm -XX:+AlwaysPreTouch -XX:+UseG1GC -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+UseStringDeduplication"
+          value = "-Xms${local.controller_heap_size} -Xmx${local.controller_heap_size}"
         },
       ]
 
       JavaOpts = "-Xms${local.oc_heap_size} -Xmx${local.oc_heap_size} -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.enablePluginCatalogInOC=true -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true"
 
       ExtraGroovyConfiguration = var.extra_groovy_configuration
-
-      ExtraVolumes = [
-        {
-          name = var.oc_secret_name
-          secret = {
-            defaultMode = 0400
-            secretName  = var.oc_secret_name
-          }
-        }
-      ]
-
-      ExtraVolumeMounts = [
-        {
-          name      = var.oc_secret_name
-          mountPath = var.secret_mount_path
-        }
-      ]
     }
 
     HibernationEnabled = var.hibernation_enabled

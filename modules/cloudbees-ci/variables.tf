@@ -22,7 +22,7 @@ variable "controller_image" {
 }
 
 variable "controller_memory" {
-  default = 8
+  default = 4
   type    = number
 }
 
@@ -88,7 +88,7 @@ variable "prometheus_relabelings" {
 
 variable "secret_data" {
   default = {}
-  type    = map(string)
+  type    = map(any)
 }
 
 variable "storage_class" {
