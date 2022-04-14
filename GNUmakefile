@@ -21,7 +21,7 @@ sda: roots/sda
 		terraform $(ACTION)
 
 
-.PHONY: casc
-casc: roots/sda
+.PHONY: sda-context
+sda-context: roots/sda
 	@cd roots/sda && \
-		terraform $(ACTION) -target=module.cloudbees_ci.kubernetes_config_map.casc_bundle
+		eval `terraform output -raw update_kubectl_namespace_command`
