@@ -23,7 +23,7 @@ variable "namespace" {
   default = "cloudbees-cd"
 }
 
-variable "ci_oc_url" {}
+variable "cjoc_url" {}
 
 variable "platform" {}
 

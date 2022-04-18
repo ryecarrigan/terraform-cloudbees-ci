@@ -7,23 +7,41 @@ data "kubernetes_ingress" "cjoc" {
   }
 }
 
-locals {
-  create_bundle = length(var.bundle_data) != 0
-  create_secret = length(var.secret_data) != 0
+data "kubernetes_resource" "crd" {
+  for_each   = var.create_servicemonitors ? local.this : []
+  depends_on = [kubernetes_namespace.this]
 
-  bundle = concat([for values in [local.bundle_values] : local.bundle_values if local.create_bundle], [""])[0]
-  bundle_values = yamlencode({
+  api_version = "apiextensions.k8s.io/v1"
+  kind        = "CustomResourceDefinition"
+
+  // noinspection HCLUnknownBlockType
+  metadata {
+    name = "servicemonitors.monitoring.coreos.com"
+  }
+}
+
+locals {
+  bundle_values = local.create_bundle ? yamlencode({
     OperationsCenter = {
       CasC = {
         Enabled = true
       }
 
-      ConfigMapName = var.oc_configmap_name
+      ConfigMapName = var.bundle_configmap_name
     }
-  })
+  }) : ""
 
-  secrets = concat([for values in [local.secret_values] : local.secret_values if local.create_secret], [""])[0]
-  secret_values = yamlencode({
+  create_bundle = length(var.bundle_data) != 0
+  create_secret = length(var.secret_data) != 0
+
+  optional_values = {
+    "OperationsCenter.Image.dockerImage" = var.cjoc_image
+    "Master.Image.dockerImage"           = var.controller_image
+    "Agents.Image.dockerImage"           = var.agent_image
+    "Persistence.StorageClass"           = var.storage_class
+  }
+
+  secret_values = local.create_secret ? yamlencode({
     OperationsCenter = {
       ContainerEnv = [
         {
@@ -33,113 +51,19 @@ locals {
       ]
 
       ExtraVolumes = [{
-        name = var.oc_secret_name
+        name = var.secret_name
         secret = {
           defaultMode = 0400
-          secretName  = var.oc_secret_name
+          secretName  = var.secret_name
         }
       }]
 
       ExtraVolumeMounts = [{
-        name      = var.oc_secret_name
+        name      = var.secret_name
         mountPath = var.secret_mount_path
       }]
     }
-  })
-}
-
-
-resource "time_sleep" "wait" {
-  depends_on = [kubernetes_namespace.this]
-
-  destroy_duration = "15s"
-}
-
-
-resource "kubernetes_namespace" "this" {
-  metadata {
-    name = var.namespace
-  }
-}
-
-resource "helm_release" "this" {
-  depends_on = [time_sleep.wait]
-
-  chart      = "cloudbees-core"
-  name       = "cloudbees-ci"
-  namespace  = var.namespace
-  repository = var.chart_repository
-  values     = [local.values, local.secrets, local.bundle]
-  version    = var.chart_version
-
-  # Dynamically set values if the associated vars are set
-  dynamic "set" {
-    for_each = local.dynamic_values
-    content {
-      name  = set.key
-      value = set.value
-    }
-  }
-}
-
-resource "kubernetes_config_map" "casc_bundle" {
-  for_each = local.create_bundle ? local.this : []
-
-  metadata {
-    name      = var.oc_configmap_name
-    namespace = var.namespace
-  }
-
-  data = var.bundle_data
-}
-
-resource "kubernetes_secret" "secrets" {
-  for_each = local.create_secret ? local.this : []
-
-  metadata {
-    name      = var.oc_secret_name
-    namespace = var.namespace
-  }
-
-  data = var.secret_data
-}
-
-resource "kubernetes_manifest" "service_monitor" {
-  for_each = { for k, v in local.service_monitors : k => v if var.create_servicemonitors && (var.prometheus_labels != null) }
-
-  manifest = {
-    apiVersion = "monitoring.coreos.com/v1"
-    kind       = "ServiceMonitor"
-    metadata   = {
-      labels    = var.prometheus_labels
-      name      = each.key
-      namespace = var.namespace
-    }
-
-    spec = {
-      endpoints = [{
-        interval    = "30s"
-        port        = "http"
-        relabelings = var.prometheus_relabelings
-      }]
-
-      namespaceSelector = {
-        matchNames = [var.namespace]
-      }
-
-      selector = each.value
-    }
-  }
-}
-
-locals {
-  dynamic_values = {for k, v in local.optional_values: k => v if v != ""}
-  optional_values = {
-    "OperationsCenter.Image.dockerImage" = var.oc_image
-    "Master.Image.dockerImage"           = var.controller_image
-    "Agents.Image.dockerImage"           = var.agent_image
-    "Persistence.StorageClass"           = var.storage_class
-  }
+  }) : ""
 
   service_monitors = {
     cjoc = {
@@ -166,13 +90,13 @@ locals {
 
       Resources = {
         Limits = {
-          Cpu    = var.oc_cpu
-          Memory = "${var.oc_memory}G"
+          Cpu    = var.cpu_request
+          Memory = "${var.memory_request}G"
         }
 
         Requests = {
-          Cpu    = var.oc_cpu
-          Memory = "${var.oc_memory}G"
+          Cpu    = var.cpu_request
+          Memory = "${var.memory_request}G"
         }
       }
 
@@ -181,11 +105,90 @@ locals {
         Annotations = var.ingress_annotations
       }
 
-      JavaOpts = "-Xms${var.oc_memory / 2}g -Xmx${var.oc_memory / 2}g -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.enablePluginCatalogInOC=true -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true"
+      JavaOpts = "-Xms${var.memory_request / 2}g -Xmx${var.memory_request / 2}g -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.enablePluginCatalogInOC=true -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true"
 
       ExtraGroovyConfiguration = var.extra_groovy_configuration
     }
 
     HibernationEnabled = var.hibernation_enabled
   })
+}
+
+resource "kubernetes_namespace" "this" {
+  metadata {
+    name = var.namespace
+  }
+}
+
+resource "helm_release" "this" {
+  depends_on = [kubernetes_namespace.this]
+
+  chart      = "cloudbees-core"
+  name       = "cloudbees-ci"
+  namespace  = var.namespace
+  repository = var.chart_repository
+  values     = [local.values, local.secret_values, local.bundle_values]
+  version    = var.chart_version
+
+  # Dynamically set values if the associated vars are set
+  dynamic "set" {
+    for_each = {for k, v in local.optional_values: k => v if v != ""}
+    content {
+      name  = set.key
+      value = set.value
+    }
+  }
+}
+
+resource "kubernetes_config_map" "casc_bundle" {
+  for_each   = local.create_bundle ? local.this : []
+  depends_on = [kubernetes_namespace.this]
+
+  metadata {
+    name      = var.bundle_configmap_name
+    namespace = var.namespace
+  }
+
+  data = var.bundle_data
+}
+
+resource "kubernetes_secret" "secrets" {
+  for_each   = local.create_secret ? local.this : []
+  depends_on = [kubernetes_namespace.this]
+
+  metadata {
+    name      = var.secret_name
+    namespace = var.namespace
+  }
+
+  data = var.secret_data
+}
+
+resource "kubernetes_manifest" "service_monitor" {
+  for_each   = { for k, v in local.service_monitors : k => v if var.create_servicemonitors }
+  depends_on = [data.kubernetes_resource.crd]
+
+  manifest = {
+    apiVersion = "monitoring.coreos.com/v1"
+    kind       = "ServiceMonitor"
+    metadata   = {
+      labels    = { release = "prometheus" }
+      name      = each.key
+      namespace = var.namespace
+    }
+
+    spec = {
+      endpoints = [{
+        interval    = "30s"
+        port        = "http"
+        relabelings = var.prometheus_relabelings
+      }]
+
+      namespaceSelector = {
+        matchNames = [var.namespace]
+      }
+
+      selector = each.value
+    }
+  }
 }

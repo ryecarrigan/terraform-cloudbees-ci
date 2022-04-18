@@ -36,7 +36,7 @@ module "cloudbees_cd" {
 
   admin_password      = var.cd_admin_password
   chart_version       = var.cd_chart_version
-  ci_oc_url           = "http://${coalesce(module.cloudbees_ci.*.cjoc_url)}"
+  cjoc_url            = "http://${coalesce(module.cloudbees_ci.*.cjoc_url)}"
   database_endpoint   = local.mysql_endpoint
   database_name       = var.database_name
   database_password   = var.database_password
@@ -56,13 +56,12 @@ module "cloudbees_cd" {
 ################################################################################
 
 locals {
-  install_ci        = alltrue([var.install_ci, var.ci_host_name != ""])
-  oc_bundle_data    = { for file in fileset(local.oc_bundle_dir, "*.{yml,yaml}") : file => file("${local.oc_bundle_dir}/${file}") }
-  oc_bundle_dir     = "${path.module}/${var.bundle_dir}"
-  oc_groovy_data    = { for file in fileset(local.oc_groovy_dir, "*.groovy") : file => file("${local.oc_groovy_dir}/${file}") }
-  oc_groovy_dir     = "${path.module}/${var.groovy_dir}"
-  oc_secret_data    = fileexists(var.secrets_file) ? yamldecode(file(var.secrets_file)) : {}
-  prometheus_labels = { release = "prometheus" }
+  install_ci  = alltrue([var.install_ci, var.ci_host_name != ""])
+  bundle_data = { for file in fileset(local.bundle_dir, "*.{yml,yaml}") : file => file("${local.bundle_dir}/${file}") }
+  bundle_dir  = "${path.module}/${var.bundle_dir}"
+  groovy_data = { for file in fileset(local.groovy_dir, "*.groovy") : file => file("${local.groovy_dir}/${file}") }
+  groovy_dir  = "${path.module}/${var.groovy_dir}"
+  secret_data = fileexists(var.secrets_file) ? yamldecode(file(var.secrets_file)) : {}
 
   prometheus_relabelings = lookup({
     eks = [{
@@ -79,23 +78,22 @@ module "cloudbees_ci" {
   source = "../../modules/cloudbees-ci"
 
   agent_image                = var.agent_image
-  bundle_data                = local.oc_bundle_data
+  bundle_data                = local.bundle_data
+  bundle_configmap_name      = var.oc_configmap_name
   chart_version              = var.ci_chart_version
+  cjoc_image                 = var.oc_image
   controller_image           = var.controller_image
+  cpu_request                = 2
   create_servicemonitors     = var.create_servicemonitors
-  extra_groovy_configuration = local.oc_groovy_data
+  extra_groovy_configuration = local.groovy_data
   host_name                  = var.ci_host_name
   ingress_annotations        = local.ingress_annotations
   ingress_class              = var.ingress_class
-  oc_cpu                     = 2
-  oc_image                   = var.oc_image
-  oc_memory                  = 4
+  memory_request             = 4
   namespace                  = var.ci_namespace
-  oc_configmap_name          = var.oc_configmap_name
   platform                   = var.platform
-  prometheus_labels          = local.prometheus_labels
   prometheus_relabelings     = local.prometheus_relabelings
-  secret_data                = local.oc_secret_data
+  secret_data                = local.secret_data
 }
 
 
