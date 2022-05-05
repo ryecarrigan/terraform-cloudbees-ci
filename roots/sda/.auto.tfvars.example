@@ -5,6 +5,7 @@ platform =
 # Optional common variables
 #kubeconfig_file = # Defaults to "~/.kube/config"
 #tags = # Defaults to empty map
+#update_kubeconfig = # Defaults to true
 
 # Options for installing and configuring CloudBees CI
 install_ci = true

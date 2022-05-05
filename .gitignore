@@ -7,8 +7,9 @@
 *.key
 *.tfstate*
 *.tfvars
+*kubeconfig*
 admin-user-token.txt
 backend.tf
-kubeconfig_*
 license.xml
 secrets.yaml
+roots/sda/oc-casc-bundle

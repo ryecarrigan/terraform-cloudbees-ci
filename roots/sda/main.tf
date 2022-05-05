@@ -94,6 +94,7 @@ module "cloudbees_ci" {
   platform                   = var.platform
   prometheus_relabelings     = local.prometheus_relabelings
   secret_data                = local.secret_data
+  storage_class              = var.storage_class
 }
 
 
@@ -113,4 +114,20 @@ module "mysql" {
   password      = var.database_password
   root_password = var.mysql_root_password
   user_name     = var.database_user
+}
+
+
+################################################################################
+# Post-provisioning commands
+################################################################################
+
+resource "null_resource" "update_kubeconfig" {
+  count = var.update_kubeconfig ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "kubectl config set-context --current --namespace=${var.ci_namespace}"
+    environment = {
+      KUBECONFIG = var.kubeconfig_file
+    }
+  }
 }
