@@ -32,10 +32,6 @@ locals {
     storageClasses = [{
       allowVolumeExpansion = true
 
-      annotations = {
-        "storageclass.kubernetes.io/is-default-class" = tostring(var.is_default_class)
-      }
-
       name = var.storage_class_name
 
       parameters = {
@@ -63,6 +59,7 @@ resource "aws_iam_role_policy_attachment" "this" {
 }
 
 resource "aws_efs_file_system" "this" {
+  encrypted = var.encrypt_file_system
   tags = {
     Name = local.name_prefix
   }
@@ -89,8 +86,8 @@ resource "aws_security_group" "this" {
 resource "aws_security_group_rule" "egress" {
   from_port                = 2049
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.this.id
-  source_security_group_id = var.node_security_group_id
+  security_group_id        = var.node_security_group_id
+  source_security_group_id = aws_security_group.this.id
   to_port                  = 2049
   type                     = "egress"
 }

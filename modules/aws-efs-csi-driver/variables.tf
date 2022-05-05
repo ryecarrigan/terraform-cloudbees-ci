@@ -10,9 +10,14 @@ variable "cluster_name" {
   type = string
 }
 
-variable "is_default_class" {
-  default = false
+variable "encrypt_file_system" {
+  default = true
   type    = bool
+}
+
+variable "kms_key_id" {
+  default = null
+  type    = string
 }
 
 variable "node_security_group_id" {
@@ -34,7 +39,8 @@ variable "partition_id" {
 }
 
 variable "private_subnet_ids" {
-  type = list(string)
+  default = []
+  type    = list(string)
 }
 
 variable "release_name" {
