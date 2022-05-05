@@ -115,6 +115,8 @@ locals {
 }
 
 resource "kubernetes_namespace" "this" {
+  for_each = var.manage_namespace ? local.this : []
+
   metadata {
     name = var.namespace
   }

@@ -63,6 +63,11 @@ variable "cpu_request" {
   type    = number
 }
 
+variable "manage_namespace" {
+  default = false
+  type    = bool
+}
+
 variable "memory_request" {
   default = 4
   type    = number
