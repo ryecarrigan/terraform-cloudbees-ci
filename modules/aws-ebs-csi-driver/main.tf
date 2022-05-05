@@ -35,11 +35,6 @@ locals {
 
     storageClasses = [{
       allowVolumeExpansion = true
-
-      annotations = {
-        "storageclass.kubernetes.io/is-default-class" = tostring(var.is_default_class)
-      }
-
       name = var.storage_class_name
 
       parameters = {

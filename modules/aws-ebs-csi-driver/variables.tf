@@ -10,11 +10,6 @@ variable "cluster_name" {
   type = string
 }
 
-variable "is_default_class" {
-  default = false
-  type    = bool
-}
-
 variable "oidc_issuer" {
   type = string
 }
