@@ -23,6 +23,16 @@ variable "cidr_block" {
   }
 }
 
+variable "create_acm_certificate" {
+  default = true
+  type    = bool
+}
+
+variable "create_kubeconfig_file" {
+  default = true
+  type    = bool
+}
+
 variable "dashboard_subdomain" {
   default = "dashboard"
   type    = string
@@ -53,6 +63,11 @@ variable "key_name" {
   type    = string
 }
 
+variable "kubeconfig_file" {
+  default = "eks_kubeconfig"
+  type    = string
+}
+
 variable "kubernetes_version" {
   default = "1.21"
   type    = string
@@ -76,6 +91,11 @@ variable "ssh_cidr_blocks" {
 variable "tags" {
   default = {}
   type    = map(string)
+}
+
+variable "update_default_storage_class" {
+  default = true
+  type    = string
 }
 
 variable "zone_count" {

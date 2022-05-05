@@ -39,7 +39,9 @@ locals {
   cluster_endpoint       = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   cluster_name           = "${var.cluster_name}${local.workspace_suffix}"
+  default_storage_class  = "gp2"
   ingress_class_name     = "alb"
+  kubeconfig_file        = "${path.cwd}/${var.kubeconfig_file}"
   oidc_issuer            = trimprefix(module.eks.cluster_oidc_issuer_url, "https://")
   oidc_provider_arn      = module.eks.oidc_provider_arn
   this                   = toset(["this"])
@@ -183,7 +185,8 @@ module "eks" {
 ################################################################################
 
 module "acm_certificate" {
-  source = "../../modules/acm-certificate"
+  for_each = var.create_acm_certificate ? local.this : []
+  source   = "../../modules/acm-certificate"
 
   domain_name = var.domain_name
   subdomain   = "*"
@@ -195,7 +198,7 @@ module "acm_certificate" {
 ################################################################################
 
 module "aws_load_balancer_controller" {
-  depends_on = [module.eks]
+  depends_on = [module.acm_certificate, module.eks]
   source     = "../../modules/aws-load-balancer-controller"
 
   aws_account_id            = local.aws_account_id
@@ -225,7 +228,6 @@ module "ebs_driver" {
   aws_account_id   = local.aws_account_id
   aws_region       = local.aws_region
   cluster_name     = local.cluster_name
-  is_default_class = true
   oidc_issuer      = local.oidc_issuer
   volume_tags      = var.tags
 }
@@ -272,4 +274,35 @@ module "prometheus" {
   ingress_annotations = local.alb_annotations
   ingress_class_name  = local.ingress_class_name
   ingress_extra_paths = [local.alb_redirect_path]
+}
+
+
+################################################################################
+# Post-provisioning commands
+################################################################################
+
+resource "null_resource" "update_kubeconfig" {
+  count = var.create_kubeconfig_file ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "aws eks update-kubeconfig --name ${module.eks.cluster_id} --kubeconfig ${local.kubeconfig_file}"
+  }
+}
+
+resource "null_resource" "update_default_storage_class" {
+  count = (var.create_kubeconfig_file && var.update_default_storage_class) ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "kubectl annotate --overwrite storageclass ${local.default_storage_class} storageclass.kubernetes.io/is-default-class=false"
+    environment = {
+      KUBECONFIG = local.kubeconfig_file
+    }
+  }
+
+  provisioner "local-exec" {
+    command = "kubectl annotate --overwrite storageclass ${module.ebs_driver.storage_class_name} storageclass.kubernetes.io/is-default-class=false"
+    environment = {
+      KUBECONFIG = local.kubeconfig_file
+    }
+  }
 }
