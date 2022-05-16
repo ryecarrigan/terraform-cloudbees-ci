@@ -300,7 +300,7 @@ resource "null_resource" "update_default_storage_class" {
   }
 
   provisioner "local-exec" {
-    command = "kubectl annotate --overwrite storageclass ${module.ebs_driver.storage_class_name} storageclass.kubernetes.io/is-default-class=false"
+    command = "kubectl annotate --overwrite storageclass ${module.ebs_driver.storage_class_name} storageclass.kubernetes.io/is-default-class=true"
     environment = {
       KUBECONFIG = local.kubeconfig_file
     }
