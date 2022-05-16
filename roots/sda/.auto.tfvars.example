@@ -7,6 +7,7 @@ platform =
 #tags = # Defaults to empty map
 #update_kubeconfig = # Defaults to true
 
+
 # Options for installing and configuring CloudBees CI
 install_ci = true
 ci_host_name = # required if `install_ci = true`
@@ -19,6 +20,7 @@ ci_host_name = # required if `install_ci = true`
 #controller_image = # Defaults to empty string, which will be interpreted as latest for the chart version
 #create_servicemonitors = # Defaults to false
 #groovy_dir = # Defaults to "groovy-init"
+#manage_ci_namespace = # Default to true
 #oc_configmap_name = # Defaults to "oc-casc-bundle"
 #oc_image = # Defaults to empty string, which will be interpreted as latest for the chart version
 #secrets_file = # Defaults to "values/secrets.yaml"

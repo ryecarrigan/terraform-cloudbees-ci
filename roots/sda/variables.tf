@@ -54,7 +54,7 @@ variable "ci_chart_repository" {
 }
 
 variable "ci_chart_version" {
-  default = "3.42.6"
+  default = "3.43.1"
   type    = string
 }
 
@@ -76,6 +76,11 @@ variable "controller_image" {
 variable "groovy_dir" {
   default = "groovy-init"
   type    = string
+}
+
+variable "manage_ci_namespace" {
+  default = true
+  type    = bool
 }
 
 variable "oc_configmap_name" {

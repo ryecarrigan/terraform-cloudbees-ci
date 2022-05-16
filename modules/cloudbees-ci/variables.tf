@@ -18,7 +18,7 @@ variable "chart_repository" {
 
 variable "chart_version" {
   default = null
-  type   = string
+  type    = string
 }
 
 variable "controller_image" {

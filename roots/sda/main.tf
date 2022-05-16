@@ -89,6 +89,7 @@ module "cloudbees_ci" {
   host_name                  = var.ci_host_name
   ingress_annotations        = local.ingress_annotations
   ingress_class              = var.ingress_class
+  manage_namespace           = var.manage_ci_namespace
   memory_request             = 4
   namespace                  = var.ci_namespace
   platform                   = var.platform
