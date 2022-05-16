@@ -9,13 +9,5 @@ terraform {
     kubernetes = {
       version = ">= 2.5.0"
     }
-
-    template = {
-      version = ">= 2.2.0"
-    }
-
-    time = {
-      version = ">= 0.7.2"
-    }
   }
 }
