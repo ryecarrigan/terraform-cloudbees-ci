@@ -9,10 +9,12 @@ provider "helm" {
 }
 
 locals {
+  load_balancer_tags = join(",", [for k, v in var.tags : "${k}=${v}"])
+
   ingress_annotations = lookup({
     alb = {
       "alb.ingress.kubernetes.io/scheme"      = "internet-facing"
-      "alb.ingress.kubernetes.io/tags"        = join(",", [for k, v in var.tags : "${k}=${v}"])
+      "alb.ingress.kubernetes.io/tags"        = local.load_balancer_tags
       "alb.ingress.kubernetes.io/target-type" = "ip"
     },
   }, var.ingress_class, {})
@@ -123,7 +125,8 @@ module "mysql" {
 ################################################################################
 
 resource "null_resource" "update_kubeconfig" {
-  count = var.update_kubeconfig ? 1 : 0
+  count      = var.update_kubeconfig ? 1 : 0
+  depends_on = [module.cloudbees_ci]
 
   provisioner "local-exec" {
     command = "kubectl config set-context --current --namespace=${var.ci_namespace}"
