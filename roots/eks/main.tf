@@ -91,13 +91,13 @@ module "vpc" {
   enable_dns_hostnames = true
 
   public_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${local.cluster_name}" = "owned"
+    "kubernetes.io/role/elb"                      = "1"
   }
 
   private_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-    "kubernetes.io/role/internal-elb"           = "1"
+    "kubernetes.io/cluster/${local.cluster_name}" = "owned"
+    "kubernetes.io/role/internal-elb"             = "1"
   }
 
   tags = local.vpc_tags
@@ -290,7 +290,8 @@ resource "null_resource" "update_kubeconfig" {
 }
 
 resource "null_resource" "update_default_storage_class" {
-  count = (var.create_kubeconfig_file && var.update_default_storage_class) ? 1 : 0
+  count      = (var.create_kubeconfig_file && var.update_default_storage_class) ? 1 : 0
+  depends_on = [module.ebs_driver]
 
   provisioner "local-exec" {
     command = "kubectl annotate --overwrite storageclass ${local.default_storage_class} storageclass.kubernetes.io/is-default-class=false"
