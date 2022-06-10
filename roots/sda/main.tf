@@ -92,7 +92,6 @@ module "cloudbees_ci" {
   manage_namespace           = var.manage_ci_namespace
   memory_request             = 4
   namespace                  = var.ci_namespace
-  manage_namespace           = var.manage_namespace
   platform                   = var.platform
   prometheus_relabelings     = local.prometheus_relabelings
   secret_data                = local.secret_data

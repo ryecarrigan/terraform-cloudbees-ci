@@ -28,11 +28,6 @@ variable "update_kubeconfig" {
   type    = bool
 }
 
-variable "manage_namespace" {
-  default = false
-  type    = bool
-}
-
 # Options for installing and configuring CloudBees CI
 variable "install_ci" {
   default = false
