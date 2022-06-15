@@ -13,3 +13,4 @@ backend.tf
 license.xml
 secrets.yaml
 roots/sda/oc-casc-bundle
+tfplan

@@ -176,6 +176,16 @@ module "eks" {
       type        = "ingress"
       self        = true
     }
+
+    egress_ssh_all = {
+      description = "Egress all ssh to internet for github"
+      protocol    = "tcp"
+      from_port   = 22
+      to_port     = 22
+      type        = "egress"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+    }
   }
 }
 
