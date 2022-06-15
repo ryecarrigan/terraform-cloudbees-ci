@@ -3,11 +3,9 @@ ACTION ?= plan
 
 .ONESHELL:
 eks:
-	@cd roots/eks
-	terraform $(ACTION)
+	terraform -chdir=roots/eks $(ACTION)
 
 
 .ONESHELL:
 sda:
-	@cd roots/sda
-	terraform $(ACTION)
+	terraform -chdir=roots/sda $(ACTION)
