@@ -79,7 +79,7 @@ locals {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "3.13.0"
+  version = "3.14.1"
 
   name                 = "${local.cluster_name}-vpc"
   cidr                 = var.cidr_block
@@ -128,7 +128,7 @@ module "iam" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "18.17.0"
+  version = "18.23.0"
 
   cluster_name    = local.cluster_name
   cluster_version = var.kubernetes_version
