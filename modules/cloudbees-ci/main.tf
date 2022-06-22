@@ -91,12 +91,12 @@ locals {
       Resources = {
         Limits = {
           Cpu    = var.cpu_request
-          Memory = "${var.memory_request}G"
+          Memory = "${var.memory_request}Gi"
         }
 
         Requests = {
           Cpu    = var.cpu_request
-          Memory = "${var.memory_request}G"
+          Memory = "${var.memory_request}Gi"
         }
       }
 
@@ -105,9 +105,13 @@ locals {
         Annotations = var.ingress_annotations
       }
 
-      JavaOpts = "-Xms${var.memory_request / 2}g -Xmx${var.memory_request / 2}g -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.enablePluginCatalogInOC=true -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true"
+      JavaOpts = "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=50.0 -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.enablePluginCatalogInOC=true -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true"
 
       ExtraGroovyConfiguration = var.extra_groovy_configuration
+    }
+
+    Master = {
+      JavaOpts = "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=50.0"
     }
 
     HibernationEnabled = var.hibernation_enabled
