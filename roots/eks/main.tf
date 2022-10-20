@@ -32,6 +32,7 @@ data "aws_route53_zone" "domain" {
 }
 
 locals {
+
   availability_zones     = slice(data.aws_availability_zones.available.names, 0, var.zone_count)
   aws_account_id         = data.aws_caller_identity.current.account_id
   aws_region             = data.aws_region.current.name
@@ -84,20 +85,20 @@ module "vpc" {
   name                 = "${local.cluster_name}-vpc"
   cidr                 = var.cidr_block
   azs                  = local.availability_zones
-  private_subnets      = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 100 +  i)]
-  public_subnets       = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 200 +  i)]
+  private_subnets      = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 100 + i)]
+  public_subnets       = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 200 + i)]
   enable_nat_gateway   = true
   single_nat_gateway   = true
   enable_dns_hostnames = true
 
   public_subnet_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/role/elb"                      = "1"
   }
 
   private_subnet_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-    "kubernetes.io/role/internal-elb"           = "1"
+    "kubernetes.io/role/internal-elb"             = "1"
   }
 
   tags = local.vpc_tags
@@ -178,13 +179,21 @@ module "eks" {
     }
 
     egress_ssh_all = {
-      description = "Egress all ssh to internet for github"
-      protocol    = "tcp"
-      from_port   = 22
-      to_port     = 22
-      type        = "egress"
+      description      = "Egress all ssh to internet for github"
+      protocol         = "tcp"
+      from_port        = 22
+      to_port          = 22
+      type             = "egress"
       cidr_blocks      = ["0.0.0.0/0"]
       ipv6_cidr_blocks = ["::/0"]
+    }
+    ingress_cluster_to_node_all_traffic = {
+      description                   = "Cluster API to Nodegroup all traffic"
+      protocol                      = "-1"
+      from_port                     = 0
+      to_port                       = 0
+      type                          = "ingress"
+      source_cluster_security_group = true
     }
   }
 }
@@ -235,11 +244,11 @@ module "ebs_driver" {
   depends_on = [module.eks]
   source     = "../../modules/aws-ebs-csi-driver"
 
-  aws_account_id   = local.aws_account_id
-  aws_region       = local.aws_region
-  cluster_name     = local.cluster_name
-  oidc_issuer      = local.oidc_issuer
-  volume_tags      = var.tags
+  aws_account_id = local.aws_account_id
+  aws_region     = local.aws_region
+  cluster_name   = local.cluster_name
+  oidc_issuer    = local.oidc_issuer
+  volume_tags    = var.tags
 }
 
 module "efs_driver" {
@@ -286,6 +295,10 @@ module "prometheus" {
   ingress_extra_paths = [local.alb_redirect_path]
 }
 
+module "cluster_metrics" {
+  depends_on = [module.eks]
+  source     = "../../modules/metrics-server"
+}
 
 ################################################################################
 # Post-provisioning commands
