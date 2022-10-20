@@ -32,6 +32,7 @@ data "aws_route53_zone" "domain" {
 }
 
 locals {
+
   availability_zones     = slice(data.aws_availability_zones.available.names, 0, var.zone_count)
   aws_account_id         = data.aws_caller_identity.current.account_id
   aws_region             = data.aws_region.current.name
@@ -79,24 +80,24 @@ locals {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "3.14.1"
+  version = "3.13.0"
 
   name                 = "${local.cluster_name}-vpc"
   cidr                 = var.cidr_block
   azs                  = local.availability_zones
-  private_subnets      = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 100 +  i)]
-  public_subnets       = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 200 +  i)]
+  private_subnets      = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 100 + i)]
+  public_subnets       = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 200 + i)]
   enable_nat_gateway   = true
   single_nat_gateway   = true
   enable_dns_hostnames = true
 
   public_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "owned"
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
     "kubernetes.io/role/elb"                      = "1"
   }
 
   private_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "owned"
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
     "kubernetes.io/role/internal-elb"             = "1"
   }
 
@@ -128,7 +129,7 @@ module "iam" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "18.23.0"
+  version = "18.17.0"
 
   cluster_name    = local.cluster_name
   cluster_version = var.kubernetes_version
@@ -178,13 +179,21 @@ module "eks" {
     }
 
     egress_ssh_all = {
-      description = "Egress all ssh to internet for github"
-      protocol    = "tcp"
-      from_port   = 22
-      to_port     = 22
-      type        = "egress"
+      description      = "Egress all ssh to internet for github"
+      protocol         = "tcp"
+      from_port        = 22
+      to_port          = 22
+      type             = "egress"
       cidr_blocks      = ["0.0.0.0/0"]
       ipv6_cidr_blocks = ["::/0"]
+    }
+    ingress_cluster_to_node_all_traffic = {
+      description                   = "Cluster API to Nodegroup all traffic"
+      protocol                      = "-1"
+      from_port                     = 0
+      to_port                       = 0
+      type                          = "ingress"
+      source_cluster_security_group = true
     }
   }
 }
@@ -235,11 +244,11 @@ module "ebs_driver" {
   depends_on = [module.eks]
   source     = "../../modules/aws-ebs-csi-driver"
 
-  aws_account_id   = local.aws_account_id
-  aws_region       = local.aws_region
-  cluster_name     = local.cluster_name
-  oidc_issuer      = local.oidc_issuer
-  volume_tags      = var.tags
+  aws_account_id = local.aws_account_id
+  aws_region     = local.aws_region
+  cluster_name   = local.cluster_name
+  oidc_issuer    = local.oidc_issuer
+  volume_tags    = var.tags
 }
 
 module "efs_driver" {
@@ -286,6 +295,10 @@ module "prometheus" {
   ingress_extra_paths = [local.alb_redirect_path]
 }
 
+module "cluster_metrics" {
+  depends_on = [module.eks]
+  source     = "../../modules/metrics-server"
+}
 
 ################################################################################
 # Post-provisioning commands
@@ -300,8 +313,7 @@ resource "null_resource" "update_kubeconfig" {
 }
 
 resource "null_resource" "update_default_storage_class" {
-  count      = (var.create_kubeconfig_file && var.update_default_storage_class) ? 1 : 0
-  depends_on = [module.ebs_driver]
+  count = (var.create_kubeconfig_file && var.update_default_storage_class) ? 1 : 0
 
   provisioner "local-exec" {
     command = "kubectl annotate --overwrite storageclass ${local.default_storage_class} storageclass.kubernetes.io/is-default-class=false"
