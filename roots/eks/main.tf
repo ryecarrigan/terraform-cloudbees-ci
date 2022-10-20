@@ -32,7 +32,6 @@ data "aws_route53_zone" "domain" {
 }
 
 locals {
-
   availability_zones     = slice(data.aws_availability_zones.available.names, 0, var.zone_count)
   aws_account_id         = data.aws_caller_identity.current.account_id
   aws_region             = data.aws_region.current.name
@@ -80,7 +79,7 @@ locals {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "3.13.0"
+  version = "3.16.1"
 
   name                 = "${local.cluster_name}-vpc"
   cidr                 = var.cidr_block
@@ -92,12 +91,12 @@ module "vpc" {
   enable_dns_hostnames = true
 
   public_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/cluster/${local.cluster_name}" = "owned"
     "kubernetes.io/role/elb"                      = "1"
   }
 
   private_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/cluster/${local.cluster_name}" = "owned"
     "kubernetes.io/role/internal-elb"             = "1"
   }
 
@@ -129,7 +128,7 @@ module "iam" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "18.17.0"
+  version = "18.30.2"
 
   cluster_name    = local.cluster_name
   cluster_version = var.kubernetes_version
@@ -138,6 +137,10 @@ module "eks" {
   iam_role_arn    = module.iam.cluster_role_arn
   subnet_ids      = module.vpc.private_subnets
   vpc_id          = module.vpc.vpc_id
+
+  cluster_endpoint_private_access      = true
+  cluster_endpoint_public_access       = true
+  cluster_endpoint_public_access_cidrs = var.ssh_cidr_blocks
 
   eks_managed_node_group_defaults = {
     min_size     = 1
@@ -187,6 +190,7 @@ module "eks" {
       cidr_blocks      = ["0.0.0.0/0"]
       ipv6_cidr_blocks = ["::/0"]
     }
+
     ingress_cluster_to_node_all_traffic = {
       description                   = "Cluster API to Nodegroup all traffic"
       protocol                      = "-1"
@@ -313,7 +317,8 @@ resource "null_resource" "update_kubeconfig" {
 }
 
 resource "null_resource" "update_default_storage_class" {
-  count = (var.create_kubeconfig_file && var.update_default_storage_class) ? 1 : 0
+  count      = (var.create_kubeconfig_file && var.update_default_storage_class) ? 1 : 0
+  depends_on = [module.ebs_driver]
 
   provisioner "local-exec" {
     command = "kubectl annotate --overwrite storageclass ${local.default_storage_class} storageclass.kubernetes.io/is-default-class=false"
