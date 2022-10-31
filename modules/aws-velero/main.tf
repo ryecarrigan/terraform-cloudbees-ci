@@ -28,7 +28,6 @@ resource "helm_release" "this" {
   repository = "https://vmware-tanzu.github.io/helm-charts"
   values     = [local.values]
   version    = var.chart_version
-  replace    = true
 }
 
 locals {
