@@ -40,6 +40,7 @@ locals {
   cluster_endpoint       = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   cluster_name           = "${var.cluster_name}${local.workspace_suffix}"
+  s3_backup_name         = "${local.cluster_name}.backups"
   default_storage_class  = "gp2"
   ingress_class_name     = "alb"
   kubeconfig_file        = "${path.cwd}/${var.kubeconfig_file}"
@@ -298,6 +299,58 @@ module "prometheus" {
 module "cluster_metrics" {
   depends_on = [module.eks]
   source     = "../../modules/metrics-server"
+}
+
+################################################################################
+# Velero
+################################################################################
+
+module "aws_s3_backups" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "3.4.0"
+
+  bucket = local.s3_backup_name
+
+  # Allow deletion of non-empty bucket
+  # NOTE: This is enabled for example usage only, you should not enable this for production workloads
+  force_destroy = true
+
+  attach_deny_insecure_transport_policy = true
+  attach_require_latest_tls_policy      = true
+
+  acl = "private"
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+
+  control_object_ownership = true
+  object_ownership         = "BucketOwnerPreferred"
+
+  versioning = {
+    status     = true
+    mfa_delete = false
+  }
+
+  server_side_encryption_configuration = {
+    rule = {
+      apply_server_side_encryption_by_default = {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+}
+
+module "velero_aws" {
+  source     = "../../modules/aws-velero"
+  depends_on = [module.eks]
+
+  k8s_cluster_oidc_arn = local.oidc_provider_arn
+  region_name          = local.aws_region
+
+  s3_bucket_arn = module.aws_s3_backups.s3_bucket_arn
+  bucket_name   = local.s3_backup_name
 }
 
 ################################################################################
