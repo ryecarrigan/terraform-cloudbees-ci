@@ -1,9 +1,46 @@
+module "aws_s3_backups" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "3.4.0"
+
+  bucket = var.bucket_name
+
+  # Allow deletion of non-empty bucket
+  # NOTE: This is enabled for example usage only, you should not enable this for production workloads
+  force_destroy = true
+
+  attach_deny_insecure_transport_policy = true
+  attach_require_latest_tls_policy      = true
+
+  acl = "private"
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+
+  control_object_ownership = true
+  object_ownership         = "BucketOwnerPreferred"
+
+  versioning = {
+    status     = true
+    mfa_delete = false
+  }
+
+  server_side_encryption_configuration = {
+    rule = {
+      apply_server_side_encryption_by_default = {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+}
+
 module "velero_eks_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  role_name             = "velero-${terraform.workspace}"
+  role_name             = "velero-${var.bucket_name}"
   attach_velero_policy  = true
-  velero_s3_bucket_arns = [var.s3_bucket_arn]
+  velero_s3_bucket_arns = [module.aws_s3_backups.s3_bucket_arn]
 
   oidc_providers = {
     main = {
@@ -34,7 +71,7 @@ locals {
   values = yamlencode({
     initContainers = [{
       name            = "velero-plugin-for-aws"
-      image           = "velero/velero-plugin-for-aws:v1.3.0"
+      image           = var.aws_plugin_image
       imagePullPolicy = "IfNotPresent"
       volumeMounts = [{
         mountPath = "/target"
@@ -53,14 +90,14 @@ locals {
     configuration = {
       provider = "aws"
       backupStorageLocation = {
-        bucket = var.bucket_name
+        bucket = module.aws_s3_backups.s3_bucket_id
         config = {
-          region = var.region_name
+          region = module.aws_s3_backups.s3_bucket_region
         }
       }
       volumeSnapshotLocation = {
         config = {
-          region = var.region_name
+          region = module.aws_s3_backups.s3_bucket_region
         }
       }
     }

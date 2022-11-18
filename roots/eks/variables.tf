@@ -107,3 +107,8 @@ variable "zone_count" {
     error_message = "Zone count must be non-zero and positive."
   }
 }
+
+variable "install_velero" {
+  default = false
+  type    = bool
+}
