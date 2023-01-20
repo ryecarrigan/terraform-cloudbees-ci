@@ -1,8 +1,3 @@
-variable "agent_image" {
-  default = ""
-  type    = string
-}
-
 variable "bundle_configmap_name" {
   default = "oc-casc-bundle"
 }
@@ -21,11 +16,6 @@ variable "chart_version" {
   type    = string
 }
 
-variable "controller_image" {
-  default = ""
-  type    = string
-}
-
 variable "create_servicemonitors" {
   default = false
   type    = bool
@@ -34,11 +24,6 @@ variable "create_servicemonitors" {
 variable "extra_groovy_configuration" {
   default = {}
   type    = map(any)
-}
-
-variable "hibernation_enabled" {
-  type    = bool
-  default = false
 }
 
 variable "host_name" {
@@ -53,24 +38,9 @@ variable "ingress_class" {
   type    = string
 }
 
-variable "cjoc_image" {
-  default = ""
-  type    = string
-}
-
-variable "cpu_request" {
-  default = 2
-  type    = number
-}
-
 variable "manage_namespace" {
   default = false
   type    = bool
-}
-
-variable "memory_request" {
-  default = 4
-  type    = number
 }
 
 variable "namespace" {
@@ -91,14 +61,11 @@ variable "secret_data" {
   type    = map(any)
 }
 
-variable "secret_mount_path" {
-  default = "/var/run/secrets/cjoc"
-}
-
 variable "secret_name" {
   default = "oc-secrets"
 }
 
-variable "storage_class" {
-  default = ""
+variable "values" {
+  default = null
+  type    = string
 }

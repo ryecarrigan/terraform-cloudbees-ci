@@ -34,19 +34,13 @@ locals {
   create_bundle = length(var.bundle_data) != 0
   create_secret = length(var.secret_data) != 0
 
-  optional_values = {
-    "OperationsCenter.Image.dockerImage" = var.cjoc_image
-    "Master.Image.dockerImage"           = var.controller_image
-    "Agents.Image.dockerImage"           = var.agent_image
-    "Persistence.StorageClass"           = var.storage_class
-  }
-
+  secret_mount_path = "/var/run/secrets/cjoc"
   secret_values = local.create_secret ? yamlencode({
     OperationsCenter = {
       ContainerEnv = [
         {
           name  = "SECRETS"
-          value = var.secret_mount_path
+          value = local.secret_mount_path
         }
       ]
 
@@ -60,7 +54,7 @@ locals {
 
       ExtraVolumeMounts = [{
         name      = var.secret_name
-        mountPath = var.secret_mount_path
+        mountPath = local.secret_mount_path
       }]
     }
   }) : ""
@@ -88,33 +82,13 @@ locals {
       HostName = var.host_name
       Protocol = "https"
 
-      Resources = {
-        Limits = {
-          Cpu    = var.cpu_request
-          Memory = "${var.memory_request}Gi"
-        }
-
-        Requests = {
-          Cpu    = var.cpu_request
-          Memory = "${var.memory_request}Gi"
-        }
-      }
-
       Ingress = {
         Class       = var.ingress_class
         Annotations = var.ingress_annotations
       }
 
-      JavaOpts = "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=50.0 -Dcom.cloudbees.jenkins.cjp.installmanager.CJPPluginManager.enablePluginCatalogInOC=true -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true"
-
       ExtraGroovyConfiguration = var.extra_groovy_configuration
     }
-
-    Master = {
-      JavaOpts = "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=50.0"
-    }
-
-    HibernationEnabled = var.hibernation_enabled
   })
 }
 
@@ -133,17 +107,8 @@ resource "helm_release" "this" {
   name       = "cloudbees-ci"
   namespace  = var.namespace
   repository = var.chart_repository
-  values     = [local.values, local.secret_values, local.bundle_values]
+  values     = [local.values, local.secret_values, local.bundle_values, var.values]
   version    = var.chart_version
-
-  # Dynamically set values if the associated vars are set
-  dynamic "set" {
-    for_each = {for k, v in local.optional_values: k => v if v != ""}
-    content {
-      name  = set.key
-      value = set.value
-    }
-  }
 }
 
 resource "kubernetes_config_map" "casc_bundle" {

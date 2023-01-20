@@ -11,20 +11,15 @@ platform =
 # Options for installing and configuring CloudBees CI
 install_ci = true
 ci_host_name = # required if `install_ci = true`
-
-#agent_image = # Defaults to empty string, which will be interpreted as latest for the chart version
 #bundle_dir = # Defaults to "oc-casc-bundle"
 #ci_chart_repository = "s3://charts.staging.core-mp/cloudbees-staging"
 #ci_chart_version = # Defaults to latest hard-coded in variables
 #ci_namespace = # Defaults to "cloudbees-ci"
-#controller_image = # Defaults to empty string, which will be interpreted as latest for the chart version
 #create_servicemonitors = # Defaults to false
 #groovy_dir = # Defaults to "groovy-init"
 #manage_ci_namespace = # Default to true
 #oc_configmap_name = # Defaults to "oc-casc-bundle"
-#oc_image = # Defaults to empty string, which will be interpreted as latest for the chart version
 #secrets_file = # Defaults to "values/secrets.yaml"
-#storage_class = # Defaults to empty string, which will be interpreted as default StorageClass
 
 
 # Options for installing and configuring CloudBees CD/RO
