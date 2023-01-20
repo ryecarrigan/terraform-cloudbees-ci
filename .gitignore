@@ -10,7 +10,7 @@
 *kubeconfig*
 admin-user-token.txt
 backend.tf
-license.xml
-secrets.yaml
+roots/sda/values/*.xml
+roots/sda/values/*.yaml
 roots/sda/oc-casc-bundle
 tfplan

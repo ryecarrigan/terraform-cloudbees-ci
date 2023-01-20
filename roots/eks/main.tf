@@ -204,9 +204,9 @@ module "eks" {
 
 # EKS module doesn't propagate tags to the ASGs so we do that here.
 resource "aws_autoscaling_group_tag" "tag" {
-  for_each = toset(module.eks.eks_managed_node_groups_autoscaling_group_names)
+  count = var.zone_count
 
-  autoscaling_group_name = each.value
+  autoscaling_group_name = module.eks.eks_managed_node_groups_autoscaling_group_names[count.index]
   dynamic "tag" {
     for_each = var.tags
     content {

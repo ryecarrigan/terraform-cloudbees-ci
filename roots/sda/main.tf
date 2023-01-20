@@ -58,12 +58,14 @@ module "cloudbees_cd" {
 ################################################################################
 
 locals {
-  install_ci  = alltrue([var.install_ci, var.ci_host_name != ""])
-  bundle_data = { for file in fileset(local.bundle_dir, "*.{yml,yaml}") : file => file("${local.bundle_dir}/${file}") }
-  bundle_dir  = "${path.module}/${var.bundle_dir}"
-  groovy_data = { for file in fileset(local.groovy_dir, "*.groovy") : file => file("${local.groovy_dir}/${file}") }
-  groovy_dir  = "${path.module}/${var.groovy_dir}"
-  secret_data = fileexists(var.secrets_file) ? yamldecode(file(var.secrets_file)) : {}
+  install_ci     = alltrue([var.install_ci, var.ci_host_name != ""])
+  bundle_data    = { for file in fileset(local.bundle_dir, "*.{yml,yaml}") : file => file("${local.bundle_dir}/${file}") }
+  bundle_dir     = "${path.module}/${var.bundle_dir}"
+  ci_values      = fileexists(local.ci_values_file) ? file(local.ci_values_file) : null
+  ci_values_file = "${path.module}/${var.ci_values_file}"
+  groovy_data    = { for file in fileset(local.groovy_dir, "*.groovy") : file => file("${local.groovy_dir}/${file}") }
+  groovy_dir     = "${path.module}/${var.groovy_dir}"
+  secret_data    = fileexists(var.secrets_file) ? yamldecode(file(var.secrets_file)) : {}
 
   prometheus_relabelings = lookup({
     eks = [{
@@ -79,25 +81,20 @@ module "cloudbees_ci" {
   count  = local.install_ci ? 1 : 0
   source = "../../modules/cloudbees-ci"
 
-  agent_image                = var.agent_image
   bundle_data                = local.bundle_data
   bundle_configmap_name      = var.oc_configmap_name
   chart_version              = var.ci_chart_version
-  cjoc_image                 = var.oc_image
-  controller_image           = var.controller_image
-  cpu_request                = 2
   create_servicemonitors     = var.create_servicemonitors
   extra_groovy_configuration = local.groovy_data
   host_name                  = var.ci_host_name
   ingress_annotations        = local.ingress_annotations
   ingress_class              = var.ingress_class
   manage_namespace           = var.manage_ci_namespace
-  memory_request             = 4
   namespace                  = var.ci_namespace
   platform                   = var.platform
   prometheus_relabelings     = local.prometheus_relabelings
   secret_data                = local.secret_data
-  storage_class              = var.storage_class
+  values                     = local.ci_values
 }
 
 

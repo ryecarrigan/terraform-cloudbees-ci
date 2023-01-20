@@ -1,0 +1,48 @@
+OperationsCenter:
+  Resources:
+    Limits:
+      Cpu: 2
+      Memory: 4Gi
+    Requests:
+      Cpu: 2
+      Memory: 4Gi
+
+  JavaOpts: >-
+    -Dcom.cloudbees.masterprovisioning.kubernetes.KubernetesMasterProvisioning.deleteClaim=true
+    -Djenkins.install.runSetupWizard=false
+    -Duser.timezone=America/New_York
+    -XX:InitialRAMPercentage=50.0
+    -XX:MaxRAMPercentage=50.0
+    -XX:+AlwaysPreTouch
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:HeapDumpPath=$JENKINS_HOME/logs
+    -XX:+UnlockDiagnosticVMOptions
+    -XX:+LogVMOutput
+    -XX:LogFile=$JENKINS_HOME/logs/jvm.log
+    -XX:ErrorFile=$JENKINS_HOME/logs/hs_err_%p.log
+    -XX:+UseG1GC
+    -XX:+UseStringDeduplication
+    -XX:+ParallelRefProcEnabled
+    -XX:+DisableExplicitGC
+    -XX:+UnlockExperimentalVMOptions
+
+HibernationEnabled: false
+
+Master:
+  JavaOpts: >-
+    -Djenkins.install.runSetupWizard=false
+    -Duser.timezone=America/New_York
+    -XX:InitialRAMPercentage=50.0
+    -XX:MaxRAMPercentage=50.0
+    -XX:+AlwaysPreTouch
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:HeapDumpPath=$JENKINS_HOME/logs
+    -XX:+UnlockDiagnosticVMOptions
+    -XX:+LogVMOutput
+    -XX:LogFile=$JENKINS_HOME/logs/jvm.log
+    -XX:ErrorFile=$JENKINS_HOME/logs/hs_err_%p.log
+    -XX:+UseG1GC
+    -XX:+UseStringDeduplication
+    -XX:+ParallelRefProcEnabled
+    -XX:+DisableExplicitGC
+    -XX:+UnlockExperimentalVMOptions

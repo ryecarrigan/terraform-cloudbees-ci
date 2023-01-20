@@ -34,10 +34,6 @@ variable "install_ci" {
   type    = bool
 }
 
-variable "agent_image" {
-  default = ""
-}
-
 variable "create_servicemonitors" {
   default = false
   type    = bool
@@ -68,8 +64,8 @@ variable "ci_namespace" {
   type    = string
 }
 
-variable "controller_image" {
-  default = ""
+variable "ci_values_file" {
+  default = "values/ci.yaml"
   type    = string
 }
 
@@ -88,18 +84,8 @@ variable "oc_configmap_name" {
   type    = string
 }
 
-variable "oc_image" {
-  default = ""
-  type    = string
-}
-
 variable "secrets_file" {
   default = "values/secrets.yaml"
-  type    = string
-}
-
-variable "storage_class" {
-  default = ""
   type    = string
 }
 
