@@ -9,6 +9,6 @@ variable "release_name" {
 }
 
 variable "release_version" {
-  default = "6.0.0"
+  default = "6.2.7"
   type    = string
 }
