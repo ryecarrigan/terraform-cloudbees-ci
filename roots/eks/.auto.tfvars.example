@@ -11,6 +11,7 @@ domain_name = # Must be an existing Route53 zone
 #grafana_subdomain = # Defaults to "grafana"
 #install_kubernetes_dashboard = # Defaults to false
 #install_prometheus = # Defaults to false
+#install_velero = # Defaults to false
 #instance_types = # Defaults to ["m5.xlarge", "m5a.xlarge", "m4.xlarge"]
 #key_name = # Defaults to empty string, which will be interpreted as none
 #kubeconfig_file = # Defaults to "eks_kubeconfig"
