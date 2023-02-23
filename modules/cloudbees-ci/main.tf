@@ -59,6 +59,9 @@ locals {
     }
   }) : ""
 
+  service_account_cjoc = lookup(lookup(local.values_yaml, "rbac", {}), "serviceAccountName", "cjoc")
+  service_account_jenkins = lookup(lookup(local.values_yaml, "rbac", {}), "masterServiceAccountName", "jenkins")
+
   service_monitors = {
     cjoc = {
       matchLabels = {
@@ -90,6 +93,8 @@ locals {
       ExtraGroovyConfiguration = var.extra_groovy_configuration
     }
   })
+
+  values_yaml = yamldecode(var.values)
 }
 
 resource "kubernetes_namespace" "this" {
@@ -133,6 +138,66 @@ resource "kubernetes_secret" "secrets" {
   }
 
   data = var.secret_data
+}
+
+resource "kubernetes_role" "secrets" {
+  depends_on = [kubernetes_namespace.this]
+  for_each   = var.create_secrets_role ? local.this : []
+
+  metadata {
+    name      = var.secrets_role_name
+    namespace = var.namespace
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["secrets"]
+    verbs      = ["get", "list", "watch"]
+  }
+}
+
+resource "kubernetes_role_binding" "cjoc" {
+  depends_on = [kubernetes_namespace.this]
+  for_each   = var.create_secrets_role ? local.this : []
+
+  metadata {
+    name      = local.service_account_cjoc
+    namespace = var.namespace
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Role"
+    name      = var.secrets_role_name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = local.service_account_cjoc
+    namespace = var.namespace
+  }
+}
+
+resource "kubernetes_role_binding" "jenkins" {
+  depends_on = [kubernetes_namespace.this]
+  for_each   = var.create_secrets_role ? local.this : []
+
+  metadata {
+    name      = local.service_account_jenkins
+    namespace = var.namespace
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Role"
+    name      = var.secrets_role_name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = local.service_account_jenkins
+    namespace = var.namespace
+  }
 }
 
 resource "kubernetes_manifest" "service_monitor" {

@@ -85,6 +85,7 @@ module "cloudbees_ci" {
   bundle_configmap_name      = var.oc_configmap_name
   chart_version              = var.ci_chart_version
   create_servicemonitors     = var.create_servicemonitors
+  create_secrets_role        = true
   extra_groovy_configuration = local.groovy_data
   host_name                  = var.ci_host_name
   ingress_annotations        = local.ingress_annotations

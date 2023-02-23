@@ -16,6 +16,11 @@ variable "chart_version" {
   type    = string
 }
 
+variable "create_secrets_role" {
+  default = false
+  type    = bool
+}
+
 variable "create_servicemonitors" {
   default = false
   type    = bool
@@ -63,6 +68,12 @@ variable "secret_data" {
 
 variable "secret_name" {
   default = "oc-secrets"
+  type    = string
+}
+
+variable "secrets_role_name" {
+  default = "jenkins-secrets"
+  type    = string
 }
 
 variable "values" {
