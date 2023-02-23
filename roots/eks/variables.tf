@@ -54,7 +54,7 @@ variable "install_prometheus" {
 }
 
 variable "instance_types" {
-  default = ["m5.xlarge", "m5a.xlarge", "m4.xlarge"]
+  default = ["m6a.xlarge", "m5a.xlarge", "m5.xlarge"]
   type    = set(string)
 }
 
@@ -69,11 +69,11 @@ variable "kubeconfig_file" {
 }
 
 variable "kubernetes_version" {
-  default = "1.21"
+  default = "1.24"
   type    = string
 
   validation {
-    condition     = contains(["1.19", "1.20", "1.21", "1.22"], var.kubernetes_version)
+    condition     = contains(["1.22", "1.23", "1.24"], var.kubernetes_version)
     error_message = "Provided Kubernetes version is not supported by EKS and/or CloudBees."
   }
 }
