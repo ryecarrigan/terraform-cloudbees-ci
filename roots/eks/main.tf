@@ -202,18 +202,15 @@ module "eks" {
   }
 }
 
-# EKS module doesn't propagate tags to the ASGs so we do that here.
+# This is how we create a Tag for each autoscaling group in each availability zone. If you have a better way please suggest it!
 resource "aws_autoscaling_group_tag" "tag" {
-  count = var.zone_count
+  for_each = { for e in flatten([for i in range(var.zone_count) : [for k, v in var.tags : {i: i, k: k, v: v}]]): "${e.k}_${e.i}" => e }
 
-  autoscaling_group_name = module.eks.eks_managed_node_groups_autoscaling_group_names[count.index]
-  dynamic "tag" {
-    for_each = var.tags
-    content {
-      key                 = tag.key
-      propagate_at_launch = true
-      value               = tag.value
-    }
+  autoscaling_group_name = module.eks.eks_managed_node_groups_autoscaling_group_names[each.value.i]
+  tag {
+    key                 = each.value.k
+    propagate_at_launch = true
+    value               = each.value.v
   }
 }
 
