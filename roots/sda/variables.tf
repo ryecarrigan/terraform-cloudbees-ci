@@ -79,11 +79,6 @@ variable "manage_ci_namespace" {
   type    = bool
 }
 
-variable "oc_configmap_name" {
-  default = "oc-casc-bundle"
-  type    = string
-}
-
 variable "secrets_file" {
   default = "values/secrets.yaml"
   type    = string
