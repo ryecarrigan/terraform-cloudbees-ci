@@ -8,18 +8,6 @@ provider "helm" {
   }
 }
 
-locals {
-  load_balancer_tags = join(",", [for k, v in var.tags : "${k}=${v}"])
-
-  ingress_annotations = lookup({
-    alb = {
-      "alb.ingress.kubernetes.io/scheme"      = "internet-facing"
-      "alb.ingress.kubernetes.io/tags"        = local.load_balancer_tags
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-    },
-  }, var.ingress_class, {})
-}
-
 
 ################################################################################
 # CloudBees CD/RO
@@ -44,8 +32,6 @@ module "cloudbees_cd" {
   database_password   = var.database_password
   database_user       = var.database_user
   host_name           = var.cd_host_name
-  ingress_annotations = local.ingress_annotations
-  ingress_class       = var.ingress_class
   license_data        = local.cd_license_data
   namespace           = var.cd_namespace
   platform            = var.platform
@@ -81,21 +67,15 @@ module "cloudbees_ci" {
   count  = local.install_ci ? 1 : 0
   source = "../../modules/cloudbees-ci"
 
-  bundle_data                = local.bundle_data
-  bundle_configmap_name      = var.oc_configmap_name
-  chart_version              = var.ci_chart_version
-  create_servicemonitors     = var.create_servicemonitors
-  create_secrets_role        = true
-  extra_groovy_configuration = local.groovy_data
-  host_name                  = var.ci_host_name
-  ingress_annotations        = local.ingress_annotations
-  ingress_class              = var.ingress_class
-  manage_namespace           = var.manage_ci_namespace
-  namespace                  = var.ci_namespace
-  platform                   = var.platform
-  prometheus_relabelings     = local.prometheus_relabelings
-  secret_data                = local.secret_data
-  values                     = local.ci_values
+  bundle_data            = local.bundle_data
+  chart_version          = var.ci_chart_version
+  create_servicemonitors = var.create_servicemonitors
+  create_secrets_role    = true
+  manage_namespace       = var.manage_ci_namespace
+  namespace              = var.ci_namespace
+  prometheus_relabelings = local.prometheus_relabelings
+  secret_data            = local.secret_data
+  values                 = local.ci_values
 }
 
 

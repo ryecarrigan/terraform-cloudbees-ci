@@ -21,44 +21,9 @@ data "kubernetes_resource" "crd" {
 }
 
 locals {
-  bundle_values = local.create_bundle ? yamlencode({
-    OperationsCenter = {
-      CasC = {
-        Enabled = true
-      }
-
-      ConfigMapName = var.bundle_configmap_name
-    }
-  }) : ""
-
+  config_map_name = lookup(lookup(lookup(local.values_yaml, "OperationsCenter", {}), "CasC", {}), "ConfigMapName", "oc-casc-bundle")
   create_bundle = length(var.bundle_data) != 0
   create_secret = length(var.secret_data) != 0
-
-  secret_mount_path = "/var/run/secrets/cjoc"
-  secret_values = local.create_secret ? yamlencode({
-    OperationsCenter = {
-      ContainerEnv = [
-        {
-          name  = "SECRETS"
-          value = local.secret_mount_path
-        }
-      ]
-
-      ExtraVolumes = [{
-        name = var.secret_name
-        secret = {
-          defaultMode = 0400
-          secretName  = var.secret_name
-        }
-      }]
-
-      ExtraVolumeMounts = [{
-        name      = var.secret_name
-        mountPath = local.secret_mount_path
-      }]
-    }
-  }) : ""
-
   service_account_cjoc = lookup(lookup(local.values_yaml, "rbac", {}), "serviceAccountName", "cjoc")
   service_account_jenkins = lookup(lookup(local.values_yaml, "rbac", {}), "masterServiceAccountName", "jenkins")
 
@@ -78,22 +43,6 @@ locals {
   }
 
   this = toset(["this"])
-
-  values = yamlencode({
-    OperationsCenter = {
-      Platform = var.platform
-      HostName = var.host_name
-      Protocol = "https"
-
-      Ingress = {
-        Class       = var.ingress_class
-        Annotations = var.ingress_annotations
-      }
-
-      ExtraGroovyConfiguration = var.extra_groovy_configuration
-    }
-  })
-
   values_yaml = yamldecode(var.values)
 }
 
@@ -112,7 +61,7 @@ resource "helm_release" "this" {
   name       = "cloudbees-ci"
   namespace  = var.namespace
   repository = var.chart_repository
-  values     = [local.values, local.secret_values, local.bundle_values, var.values]
+  values     = [var.values]
   version    = var.chart_version
 }
 
@@ -121,7 +70,7 @@ resource "kubernetes_config_map" "casc_bundle" {
   depends_on = [kubernetes_namespace.this]
 
   metadata {
-    name      = var.bundle_configmap_name
+    name      = local.config_map_name
     namespace = var.namespace
   }
 

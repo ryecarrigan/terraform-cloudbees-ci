@@ -1,7 +1,3 @@
-variable "bundle_configmap_name" {
-  default = "oc-casc-bundle"
-}
-
 variable "bundle_data" {
   default = {}
   type    = map(any)
@@ -26,23 +22,6 @@ variable "create_servicemonitors" {
   type    = bool
 }
 
-variable "extra_groovy_configuration" {
-  default = {}
-  type    = map(any)
-}
-
-variable "host_name" {
-  type = string
-}
-
-variable "ingress_annotations" {
-  type = map(any)
-}
-
-variable "ingress_class" {
-  type    = string
-}
-
 variable "manage_namespace" {
   default = false
   type    = bool
@@ -50,10 +29,6 @@ variable "manage_namespace" {
 
 variable "namespace" {
   type = string
-}
-
-variable "platform" {
-  default = "standard"
 }
 
 variable "prometheus_relabelings" {
