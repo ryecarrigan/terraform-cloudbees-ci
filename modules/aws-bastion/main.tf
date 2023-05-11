@@ -35,6 +35,7 @@ resource "aws_security_group_rule" "egress" {
 
 resource "aws_security_group_rule" "ingress" {
   cidr_blocks       = var.ssh_cidr_blocks
+  description       = "SSH ingress from provided CIDR"
   from_port         = 22
   protocol          = "tcp"
   security_group_id = aws_security_group.this.id
@@ -43,6 +44,7 @@ resource "aws_security_group_rule" "ingress" {
 }
 
 resource "aws_security_group_rule" "source" {
+  description              = "SSH ingress from EKS nodes"
   from_port                = 22
   protocol                 = "tcp"
   security_group_id        = aws_security_group.this.id
