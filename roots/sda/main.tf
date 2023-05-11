@@ -14,28 +14,28 @@ provider "helm" {
 ################################################################################
 
 locals {
-  install_cdro    = alltrue([var.install_cdro, local.mysql_endpoint != "", var.cd_admin_password != "", var.cd_host_name != "", var.rwx_storage_class != ""])
+  install_cdro    = alltrue([var.install_cdro, local.mysql_endpoint != ""])
   cd_license_data = fileexists(local.cd_license_file) ? file(local.cd_license_file) : ""
   cd_license_file = "${path.module}/${var.cd_license_file}"
-  mysql_endpoint  = local.install_mysql ? concat(module.mysql.*.dns_name, [""])[0] : var.database_endpoint
+  cd_values      = fileexists(local.cd_values_file) ? file(local.cd_values_file) : null
+  cd_values_yaml = yamldecode(local.cd_values)
+  cd_values_file = "${path.module}/${var.cd_values_file}"
+  mysql_endpoint = concat(module.mysql.*.dns_name, [""])[0]
+  mysql_values   = yamlencode({
+    database: {
+      clusterEndpoint: local.mysql_endpoint
+    }
+  })
 }
 
 module "cloudbees_cd" {
   count  = local.install_cdro ? 1 : 0
   source = "../../modules/cloudbees-cd"
 
-  admin_password      = var.cd_admin_password
   chart_version       = var.cd_chart_version
-  cjoc_url            = "http://${coalesce(module.cloudbees_ci.*.cjoc_url)}"
-  database_endpoint   = local.mysql_endpoint
-  database_name       = var.database_name
-  database_password   = var.database_password
-  database_user       = var.database_user
-  host_name           = var.cd_host_name
   license_data        = local.cd_license_data
   namespace           = var.cd_namespace
-  platform            = var.platform
-  rwx_storage_class   = var.rwx_storage_class
+  values              = [local.cd_values, local.mysql_values]
 }
 
 
@@ -84,17 +84,19 @@ module "cloudbees_ci" {
 ################################################################################
 
 locals {
-  install_mysql = alltrue([var.install_mysql, var.database_password != "", var.mysql_root_password != ""])
+  db_password   = lookup(local.db_values, "dbPassword")
+  db_values     = lookup(local.cd_values_yaml, "database")
+  install_mysql = alltrue([var.install_mysql, local.db_password != ""])
 }
 
 module "mysql" {
   count  = local.install_mysql ? 1 : 0
   source = "../../modules/mysql"
 
-  database_name = var.database_name
-  password      = var.database_password
-  root_password = var.mysql_root_password
-  user_name     = var.database_user
+  database_name = lookup(local.db_values, "dbName", "flowdb")
+  password      = local.db_password
+  root_password = local.db_password
+  user_name     = lookup(local.db_values, "dbUser", "flow")
 }
 
 

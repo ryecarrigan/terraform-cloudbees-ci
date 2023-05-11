@@ -90,18 +90,8 @@ variable "install_cdro" {
   type    = bool
 }
 
-variable "cd_admin_password" {
-  default = ""
-  type    = string
-}
-
 variable "cd_chart_version" {
   default = "2.13.2"
-  type    = string
-}
-
-variable "cd_host_name" {
-  default = ""
   type    = string
 }
 
@@ -110,28 +100,13 @@ variable "cd_license_file" {
   type    = string
 }
 
+variable "cd_values_file" {
+  default = "values/cd.yaml"
+  type    = string
+}
+
 variable "cd_namespace" {
   default = "cloudbees-cd"
-  type    = string
-}
-
-variable "database_endpoint" {
-  default = ""
-  type    = string
-}
-
-variable "database_name" {
-  default = "flowdb"
-  type    = string
-}
-
-variable "database_password" {
-  default = ""
-  type    = string
-}
-
-variable "database_user" {
-  default = "flow"
   type    = string
 }
 
@@ -146,7 +121,17 @@ variable "install_mysql" {
   type    = bool
 }
 
-variable "mysql_root_password" {
+variable "database_name" {
+  default = "flowdb"
+  type    = string
+}
+
+variable "database_password" {
   default = ""
+  type    = string
+}
+
+variable "database_user" {
+  default = "flow"
   type    = string
 }
