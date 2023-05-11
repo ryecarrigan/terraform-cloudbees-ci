@@ -1,0 +1,46 @@
+ingress:
+  host: ""
+  class: alb
+  annotations:
+    alb.ingress.kubernetes.io/inbound-cidrs: ""
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/tags: ""
+    alb.ingress.kubernetes.io/target-type: "ip"
+
+platform: eks
+
+server:
+  extraEnvs:
+    - name: CBF_OC_URL
+      value: ""
+    - name: CBF_SERVER_SDA_MODE
+      value: "true"
+  volumesPermissionsInitContainer:
+    enabled: false
+
+repository:
+  enabled: false
+
+dois:
+  credentials:
+    adminPassword: ""
+
+storage:
+  volumes:
+    serverPlugins:
+      storageClass: "efs-sc"
+
+database:
+  dbName: flowdb
+  dbUser: flow
+  dbPassword: ""
+  dbType: mysql
+  dbPort: 3306
+  mysqlConnector:
+    enabled: true
+
+flowCredentials:
+  adminPassword: ""
+
+nginx-ingress:
+  enabled: false
