@@ -182,7 +182,7 @@ module "eks" {
     }
 
     egress_ssh_all = {
-      description      = "Egress all ssh to internet for github"
+      description      = "Egress all SSH to internet for GitHub"
       protocol         = "tcp"
       from_port        = 22
       to_port          = 22
@@ -253,7 +253,6 @@ module "cluster_autoscaler" {
   cluster_name       = local.cluster_name
   kubernetes_version = var.kubernetes_version
   oidc_issuer        = local.oidc_issuer
-  patch_version      = 2
 }
 
 module "ebs_driver" {
