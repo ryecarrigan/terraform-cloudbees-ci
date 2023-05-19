@@ -23,6 +23,11 @@ variable "cidr_block" {
   }
 }
 
+variable "cluster_autoscaler_tag" {
+  default = ""
+  type    = string
+}
+
 variable "create_acm_certificate" {
   default = true
   type    = bool

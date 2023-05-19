@@ -15,23 +15,6 @@ data "aws_iam_policy_document" "assume_role_policy" {
   }
 }
 
-data "aws_iam_policy_document" "policy" {
-  statement {
-    actions = [
-      "autoscaling:DescribeAutoScalingGroups",
-      "autoscaling:DescribeAutoScalingInstances",
-      "autoscaling:DescribeLaunchConfigurations",
-      "autoscaling:DescribeTags",
-      "autoscaling:SetDesiredCapacity",
-      "autoscaling:TerminateInstanceInAutoScalingGroup",
-      "ec2:DescribeLaunchTemplateVersions",
-    ]
-
-    effect    = "Allow"
-    resources = ["*"]
-  }
-}
-
 locals {
   name_prefix = "${var.cluster_name}_${var.release_name}"
 
@@ -45,7 +28,7 @@ locals {
     cloudProvider = "aws"
 
     image = {
-      tag = "v${var.kubernetes_version}.${var.patch_version}"
+      tag = var.image_tag
     }
 
     rbac = {
@@ -61,7 +44,7 @@ locals {
 
 resource "aws_iam_policy" "this" {
   name_prefix = substr(local.name_prefix, 0, 102)
-  policy      = data.aws_iam_policy_document.policy.json
+  policy      = file("${path.module}/policy.json")
 }
 
 resource "aws_iam_role" "this" {

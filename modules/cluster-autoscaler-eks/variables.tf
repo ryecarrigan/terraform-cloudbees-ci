@@ -10,7 +10,7 @@ variable "cluster_name" {
   type = string
 }
 
-variable "kubernetes_version" {
+variable "image_tag" {
   type = string
 }
 
@@ -26,10 +26,6 @@ variable "partition_dns" {
 variable "partition_id" {
   default = "aws"
   type    = string
-}
-
-variable "patch_version" {
-  default = 0
 }
 
 variable "release_name" {

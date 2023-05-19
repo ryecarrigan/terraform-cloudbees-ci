@@ -70,6 +70,8 @@ locals {
       }
     }
   }
+
+  cluster_autoscaler_tag = var.cluster_autoscaler_tag != "" ? var.cluster_autoscaler_tag : "v${var.kubernetes_version}.0"
 }
 
 
@@ -251,7 +253,7 @@ module "cluster_autoscaler" {
   aws_account_id     = local.aws_account_id
   aws_region         = local.aws_region
   cluster_name       = local.cluster_name
-  kubernetes_version = var.kubernetes_version
+  image_tag          = local.cluster_autoscaler_tag
   oidc_issuer        = local.oidc_issuer
 }
 
