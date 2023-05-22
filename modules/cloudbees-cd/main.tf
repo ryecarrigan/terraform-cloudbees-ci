@@ -1,10 +1,14 @@
 resource "kubernetes_namespace" "this" {
+  for_each = var.manage_namespace ? local.this : []
+
   metadata {
     name = var.namespace
   }
 }
 
 resource "kubernetes_secret" "this" {
+  for_each = local.has_license ? local.this : []
+
   metadata {
     name      = local.secret_name
     namespace = var.namespace
@@ -21,14 +25,16 @@ resource "helm_release" "this" {
 
   chart      = "cloudbees-flow"
   name       = var.release_name
-  namespace  = kubernetes_namespace.this.metadata.0.name
+  namespace  = var.namespace
   repository = "https://charts.cloudbees.com/public/cloudbees"
   values     = concat([local.values], var.values)
   version    = var.chart_version
 }
 
 locals {
+  has_license = var.license_data != ""
   secret_name = "flow-secret"
+  this        = toset(["this"])
 
   values = <<EOT
 flowLicense:

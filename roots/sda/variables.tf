@@ -1,18 +1,4 @@
-# Required variables
-variable "ingress_class" {
-  type = string
-}
-
-variable "platform" {
-  type = string
-
-  validation {
-    condition     = contains(["eks"], var.platform)
-    error_message = "Not a tested/supported platform."
-  }
-}
-
-# Common configuration
+# Optional common configuration
 variable "kubeconfig_file" {
   default = "~/.kube/config"
   type    = string
@@ -28,13 +14,9 @@ variable "update_kubeconfig" {
   type    = bool
 }
 
+
 # Options for installing and configuring CloudBees CI
 variable "install_ci" {
-  default = false
-  type    = bool
-}
-
-variable "create_servicemonitors" {
   default = false
   type    = bool
 }
@@ -50,7 +32,7 @@ variable "ci_chart_repository" {
 }
 
 variable "ci_chart_version" {
-  default = "3.43.1"
+  default = "3.11946.0"
   type    = string
 }
 
@@ -67,6 +49,11 @@ variable "ci_namespace" {
 variable "ci_values_file" {
   default = "values/ci.yaml"
   type    = string
+}
+
+variable "create_service_monitors" {
+  default = false
+  type    = bool
 }
 
 variable "groovy_dir" {
@@ -100,38 +87,23 @@ variable "cd_license_file" {
   type    = string
 }
 
-variable "cd_values_file" {
-  default = "values/cd.yaml"
-  type    = string
-}
-
 variable "cd_namespace" {
   default = "cloudbees-cd"
   type    = string
 }
 
-variable "rwx_storage_class" {
-  default = ""
+variable "cd_values_file" {
+  default = "values/cd.yaml"
   type    = string
+}
+
+variable "manage_cd_namespace" {
+  default = true
+  type    = bool
 }
 
 # Options for installing and configuring a MySQL release
 variable "install_mysql" {
   default = false
   type    = bool
-}
-
-variable "database_name" {
-  default = "flowdb"
-  type    = string
-}
-
-variable "database_password" {
-  default = ""
-  type    = string
-}
-
-variable "database_user" {
-  default = "flow"
-  type    = string
 }

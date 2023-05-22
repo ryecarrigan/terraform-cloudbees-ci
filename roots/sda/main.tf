@@ -34,6 +34,7 @@ module "cloudbees_cd" {
 
   chart_version       = var.cd_chart_version
   license_data        = local.cd_license_data
+  manage_namespace    = var.manage_cd_namespace
   namespace           = var.cd_namespace
   values              = [local.cd_values, local.mysql_values]
 }
@@ -52,30 +53,20 @@ locals {
   groovy_data    = { for file in fileset(local.groovy_dir, "*.groovy") : file => file("${local.groovy_dir}/${file}") }
   groovy_dir     = "${path.module}/${var.groovy_dir}"
   secret_data    = fileexists(var.secrets_file) ? yamldecode(file(var.secrets_file)) : {}
-
-  prometheus_relabelings = lookup({
-    eks = [{
-      action       = "replace"
-      replacement  = "/$${1}/prometheus/"
-      sourceLabels = ["__meta_kubernetes_endpoints_name"]
-      targetLabel  = "__metrics_path__"
-    }]
-  }, var.platform, [])
 }
 
 module "cloudbees_ci" {
   count  = local.install_ci ? 1 : 0
   source = "../../modules/cloudbees-ci"
 
-  bundle_data            = local.bundle_data
-  chart_version          = var.ci_chart_version
-  create_servicemonitors = var.create_servicemonitors
-  create_secrets_role    = true
-  manage_namespace       = var.manage_ci_namespace
-  namespace              = var.ci_namespace
-  prometheus_relabelings = local.prometheus_relabelings
-  secret_data            = local.secret_data
-  values                 = local.ci_values
+  bundle_data             = local.bundle_data
+  chart_version           = var.ci_chart_version
+  create_service_monitors = var.create_service_monitors
+  create_secrets_role     = true
+  manage_namespace        = var.manage_ci_namespace
+  namespace               = var.ci_namespace
+  secret_data             = local.secret_data
+  values                  = local.ci_values
 }
 
 

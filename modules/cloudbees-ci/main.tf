@@ -8,7 +8,7 @@ data "kubernetes_ingress" "cjoc" {
 }
 
 data "kubernetes_resource" "crd" {
-  for_each   = var.create_servicemonitors ? local.this : []
+  for_each   = var.create_service_monitors ? local.this : []
   depends_on = [kubernetes_namespace.this]
 
   api_version = "apiextensions.k8s.io/v1"
@@ -150,7 +150,7 @@ resource "kubernetes_role_binding" "jenkins" {
 }
 
 resource "kubernetes_manifest" "service_monitor" {
-  for_each   = { for k, v in local.service_monitors : k => v if var.create_servicemonitors }
+  for_each   = { for k, v in local.service_monitors : k => v if var.create_service_monitors }
   depends_on = [data.kubernetes_resource.crd]
 
   manifest = {

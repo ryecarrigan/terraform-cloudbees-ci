@@ -1,5 +1,14 @@
-variable "chart_version" {}
+variable "chart_version" {
+  default = null
+  type    = string
+}
+
 variable "license_data" {}
+
+variable "manage_namespace" {
+  default = false
+  type    = bool
+}
 
 variable "namespace" {
   default = "cloudbees-cd"

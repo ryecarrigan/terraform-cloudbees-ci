@@ -17,7 +17,7 @@ variable "create_secrets_role" {
   type    = bool
 }
 
-variable "create_servicemonitors" {
+variable "create_service_monitors" {
   default = false
   type    = bool
 }
@@ -32,8 +32,16 @@ variable "namespace" {
 }
 
 variable "prometheus_relabelings" {
-  default = []
-  type    = list(any)
+  default = [
+    {
+      action       = "replace"
+      replacement  = "/$${1}/prometheus/"
+      sourceLabels = ["__meta_kubernetes_endpoints_name"]
+      targetLabel  = "__metrics_path__"
+    }
+  ]
+
+  type = list(any)
 }
 
 variable "secret_data" {
