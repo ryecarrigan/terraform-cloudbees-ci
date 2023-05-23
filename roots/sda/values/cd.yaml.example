@@ -1,20 +1,14 @@
 ingress:
-  host: ""
+  host: cd.example.com
   class: alb
   annotations:
-    alb.ingress.kubernetes.io/inbound-cidrs: ""
-    alb.ingress.kubernetes.io/scheme: "internet-facing"
-    alb.ingress.kubernetes.io/tags: ""
-    alb.ingress.kubernetes.io/target-type: "ip"
-
+    alb.ingress.kubernetes.io/inbound-cidrs: 0.0.0.0/0
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/tags: "key1=value1,key2=value2"
+    alb.ingress.kubernetes.io/target-type: ip
 platform: eks
 
 server:
-  extraEnvs:
-    - name: CBF_OC_URL
-      value: ""
-    - name: CBF_SERVER_SDA_MODE
-      value: "true"
   volumesPermissionsInitContainer:
     enabled: false
 

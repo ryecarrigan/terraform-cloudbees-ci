@@ -1,4 +1,14 @@
 OperationsCenter:
+  HostName: ci.example.com
+  Platform: eks
+  Protocol: https
+  Ingress:
+    Class: alb
+    Annotations:
+      alb.ingress.kubernetes.io/inbound-cidrs: 0.0.0.0/0
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/tags: "key1=value1,key2=value2"
+      alb.ingress.kubernetes.io/target-type: ip
   Resources:
     Limits:
       Cpu: 2

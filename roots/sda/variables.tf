@@ -32,7 +32,7 @@ variable "ci_chart_repository" {
 }
 
 variable "ci_chart_version" {
-  default = "3.11946.0"
+  default = "3.11963.0"
   type    = string
 }
 
@@ -78,7 +78,7 @@ variable "install_cdro" {
 }
 
 variable "cd_chart_version" {
-  default = "2.13.2"
+  default = "2.24.1"
   type    = string
 }
 
