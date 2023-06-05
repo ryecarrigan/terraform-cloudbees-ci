@@ -38,6 +38,7 @@ locals {
         directoryPerms   = "700"
         fileSystemId     = aws_efs_file_system.this.id
         provisioningMode = "efs-ap"
+        uid              = "1000"
       }
     }]
   })
