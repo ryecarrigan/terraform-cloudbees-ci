@@ -1,12 +1,3 @@
-data "kubernetes_ingress" "cjoc" {
-  depends_on = [helm_release.this]
-
-  metadata {
-    name      = "cjoc"
-    namespace = var.namespace
-  }
-}
-
 data "kubernetes_resource" "crd" {
   for_each   = var.create_service_monitors ? local.this : []
   depends_on = [kubernetes_namespace.this]
