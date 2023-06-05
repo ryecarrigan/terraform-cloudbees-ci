@@ -278,7 +278,7 @@ module "efs_driver" {
   node_security_group_id = module.eks.node_security_group_id
   oidc_issuer            = local.oidc_issuer
   private_subnet_ids     = module.vpc.private_subnets
-   storage_class_uid      = var.storage_class_uid
+  storage_class_uid      = var.storage_class_uid
   vpc_id                 = module.vpc.vpc_id
 }
 
