@@ -93,6 +93,11 @@ variable "ssh_cidr_blocks" {
   }
 }
 
+variable "storage_class_uid" {
+  default = "1000"
+  type    = string
+}
+
 variable "tags" {
   default = {}
   type    = map(string)

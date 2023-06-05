@@ -61,6 +61,11 @@ variable "storage_class_name" {
   type    = string
 }
 
+variable "storage_class_uid" {
+  default = "1000"
+  type    = string
+}
+
 variable "vpc_id" {
   type = string
 }
