@@ -24,7 +24,7 @@ variable "cidr_block" {
 }
 
 variable "cluster_autoscaler_tag" {
-  default = ""
+  default = "v1.25.2"
   type    = string
 }
 
@@ -74,11 +74,11 @@ variable "kubeconfig_file" {
 }
 
 variable "kubernetes_version" {
-  default = "1.24"
+  default = "1.25"
   type    = string
 
   validation {
-    condition     = contains(["1.22", "1.23", "1.24"], var.kubernetes_version)
+    condition     = contains(["1.22", "1.23", "1.24", "1.25"], var.kubernetes_version)
     error_message = "Provided Kubernetes version is not supported by EKS and/or CloudBees."
   }
 }
