@@ -20,7 +20,7 @@ locals {
   cd_values      = fileexists(local.cd_values_file) ? file(local.cd_values_file) : null
   cd_values_yaml = yamldecode(local.cd_values)
   cd_values_file = "${path.module}/${var.cd_values_file}"
-  mysql_endpoint = concat(module.mysql.*.dns_name, [""])[0]
+  mysql_endpoint = var.install_mysql ? concat(module.mysql.*.dns_name, [""])[0] : lookup(lookup(local.cd_values_yaml, "database", {}), "clusterEndpoint", "")
   mysql_values   = yamlencode({
     database: {
       clusterEndpoint: local.mysql_endpoint
