@@ -30,7 +30,7 @@ variable "release_name" {
 }
 
 variable "release_version" {
-  default = "6.13.1"
+  default = "6.20.4"
 }
 
 variable "route53_zone_id" {

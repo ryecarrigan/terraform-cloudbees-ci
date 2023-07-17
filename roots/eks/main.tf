@@ -22,7 +22,7 @@ data "aws_caller_identity" "current" {}
 data "aws_availability_zones" "available" {}
 
 data "aws_eks_cluster_auth" "auth" {
-  name = module.eks.cluster_id
+  name = module.eks.cluster_name
 }
 
 data "aws_region" "current" {}
@@ -81,11 +81,12 @@ locals {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "3.18.1"
+  version = "5.0.0"
 
   name                 = "${local.cluster_name}-vpc"
   cidr                 = var.cidr_block
   azs                  = local.availability_zones
+  manage_default_network_acl = false
   private_subnets      = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 100 + i)]
   public_subnets       = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 200 + i)]
   enable_nat_gateway   = true
@@ -122,25 +123,16 @@ module "bastion" {
 # Amazon EKS cluster
 ################################################################################
 
-module "iam" {
-  source = "../../modules/eks-iam-roles"
-
-  cluster_name = local.cluster_name
-}
-
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "18.30.3"
+  version = "19.15.3"
 
   cluster_name    = local.cluster_name
   cluster_version = var.kubernetes_version
-  create_iam_role = false
-  enable_irsa     = true
-  iam_role_arn    = module.iam.cluster_role_arn
   subnet_ids      = module.vpc.private_subnets
   vpc_id          = module.vpc.vpc_id
 
-  cluster_endpoint_private_access      = true
+  # Allow API access from your personal IP.
   cluster_endpoint_public_access       = true
   cluster_endpoint_public_access_cidrs = var.ssh_cidr_blocks
 
@@ -149,9 +141,8 @@ module "eks" {
     max_size     = 4
     desired_size = 1
 
-    create_iam_role       = false
+    create_iam_role       = true
     create_security_group = false
-    iam_role_arn          = module.iam.node_role_arn
     instance_types        = var.instance_types
     key_name              = var.key_name
     labels                = {}
@@ -160,7 +151,8 @@ module "eks" {
 
   eks_managed_node_groups = { for index, zone in local.availability_zones :
     "${local.cluster_name}-${zone}" => {
-      subnet_ids = [module.vpc.private_subnets[index]]
+      iam_role_name = substr("${local.cluster_name}-${zone}", 0, 38)
+      subnet_ids    = [module.vpc.private_subnets[index]]
     }
   }
 
@@ -204,18 +196,6 @@ module "eks" {
   }
 }
 
-# This is how we create a Tag for each autoscaling group in each availability zone. If you have a better way please suggest it!
-resource "aws_autoscaling_group_tag" "tag" {
-  for_each = { for e in flatten([for i in range(var.zone_count) : [for k, v in var.tags : {i: i, k: k, v: v}]]): "${e.k}_${e.i}" => e }
-
-  autoscaling_group_name = module.eks.eks_managed_node_groups_autoscaling_group_names[each.value.i]
-  tag {
-    key                 = each.value.k
-    propagate_at_launch = true
-    value               = each.value.v
-  }
-}
-
 
 ################################################################################
 # Amazon Certificate Manager certificate(s)
@@ -235,7 +215,7 @@ module "acm_certificate" {
 ################################################################################
 
 module "aws_load_balancer_controller" {
-  depends_on = [module.acm_certificate, module.eks]
+  depends_on = [module.acm_certificate]
   source     = "../../modules/aws-load-balancer-controller"
 
   aws_account_id            = local.aws_account_id
@@ -318,15 +298,17 @@ module "cluster_metrics" {
   source     = "../../modules/metrics-server"
 }
 
+
 ################################################################################
 # Post-provisioning commands
 ################################################################################
 
 resource "null_resource" "update_kubeconfig" {
-  count = var.create_kubeconfig_file ? 1 : 0
+  count      = var.create_kubeconfig_file ? 1 : 0
+  depends_on = [module.eks]
 
   provisioner "local-exec" {
-    command = "aws eks update-kubeconfig --name ${module.eks.cluster_id} --kubeconfig ${local.kubeconfig_file}"
+    command = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --kubeconfig ${local.kubeconfig_file}"
   }
 }
 

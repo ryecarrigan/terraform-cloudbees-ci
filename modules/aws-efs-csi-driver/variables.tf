@@ -48,7 +48,7 @@ variable "release_name" {
 }
 
 variable "release_version" {
-  default = "2.2.4"
+  default = "2.4.7"
 }
 
 variable "service_account_name" {

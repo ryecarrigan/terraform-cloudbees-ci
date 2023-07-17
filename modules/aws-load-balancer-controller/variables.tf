@@ -7,7 +7,7 @@ variable "aws_region" {
 }
 
 variable "chart_version" {
-  default = "1.4.1"
+  default = "1.5.5"
 }
 
 variable "cluster_name" {

@@ -52,16 +52,6 @@ resource "aws_iam_role_policy_attachment" "this" {
   role       = aws_iam_role.this.name
 }
 
-resource "aws_security_group_rule" "this" {
-  type                     = "ingress"
-  protocol                 = "tcp"
-  from_port                = 9443
-  to_port                  = 9443
-  description              = "Allow access from control plane to webhook port of AWS load balancer controller"
-  security_group_id        = var.node_security_group_id
-  source_security_group_id = var.cluster_security_group_id
-}
-
 resource "helm_release" "this" {
   chart      = "aws-load-balancer-controller"
   name       = var.release_name
