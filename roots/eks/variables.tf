@@ -38,19 +38,9 @@ variable "create_kubeconfig_file" {
   type    = bool
 }
 
-variable "dashboard_subdomain" {
-  default = "dashboard"
-  type    = string
-}
-
 variable "grafana_subdomain" {
   default = "grafana"
   type    = string
-}
-
-variable "install_kubernetes_dashboard" {
-  default = false
-  type    = bool
 }
 
 variable "install_prometheus" {

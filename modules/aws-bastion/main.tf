@@ -14,6 +14,10 @@ resource "aws_instance" "this" {
   }
 }
 
+resource "aws_eip" "this" {
+  instance = aws_instance.this.id
+}
+
 resource "aws_security_group" "this" {
   description = "Security group for the bastion instance"
   name_prefix = "${var.resource_prefix}-${var.resource_suffix}"

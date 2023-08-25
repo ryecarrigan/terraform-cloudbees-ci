@@ -1,11 +1,3 @@
-variable "aws_account_id" {
-  type = string
-}
-
-variable "aws_region" {
-  type = string
-}
-
 variable "cluster_name" {
   type = string
 }
@@ -25,6 +17,10 @@ variable "node_security_group_id" {
 }
 
 variable "oidc_issuer" {
+  type = string
+}
+
+variable "oidc_provider_arn" {
   type = string
 }
 
@@ -49,11 +45,6 @@ variable "release_name" {
 
 variable "release_version" {
   default = "2.4.7"
-}
-
-variable "service_account_name" {
-  default = "efs-csi-controller-sa"
-  type    = string
 }
 
 variable "storage_class_name" {

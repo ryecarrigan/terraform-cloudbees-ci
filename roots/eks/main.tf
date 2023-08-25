@@ -125,7 +125,7 @@ module "bastion" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "19.15.3"
+  version = "19.16.0"
 
   cluster_name    = local.cluster_name
   cluster_version = var.kubernetes_version
@@ -241,22 +241,20 @@ module "ebs_driver" {
   depends_on = [module.eks]
   source     = "../../modules/aws-ebs-csi-driver"
 
-  aws_account_id = local.aws_account_id
-  aws_region     = local.aws_region
-  cluster_name   = local.cluster_name
-  oidc_issuer    = local.oidc_issuer
-  volume_tags    = var.tags
+  cluster_name      = local.cluster_name
+  oidc_issuer       = local.oidc_issuer
+  oidc_provider_arn = local.oidc_provider_arn
+  volume_tags       = var.tags
 }
 
 module "efs_driver" {
   depends_on = [module.eks]
   source     = "../../modules/aws-efs-csi-driver"
 
-  aws_account_id         = local.aws_account_id
-  aws_region             = local.aws_region
   cluster_name           = local.cluster_name
   node_security_group_id = module.eks.node_security_group_id
   oidc_issuer            = local.oidc_issuer
+  oidc_provider_arn      = local.oidc_provider_arn
   private_subnet_ids     = module.vpc.private_subnets
   storage_class_uid      = var.storage_class_uid
   vpc_id                 = module.vpc.vpc_id
@@ -270,16 +268,6 @@ module "external_dns" {
   cluster_name    = local.cluster_name
   oidc_issuer     = local.oidc_issuer
   route53_zone_id = data.aws_route53_zone.domain.id
-}
-
-module "kubernetes_dashboard" {
-  depends_on = [module.aws_load_balancer_controller]
-  for_each   = var.install_kubernetes_dashboard ? local.this : []
-  source     = "../../modules/kubernetes-dashboard"
-
-  host_name           = "${var.dashboard_subdomain}.${var.domain_name}"
-  ingress_annotations = local.alb_annotations
-  ingress_class_name  = local.ingress_class_name
 }
 
 module "prometheus" {
@@ -314,7 +302,6 @@ resource "null_resource" "update_kubeconfig" {
 
 resource "null_resource" "update_default_storage_class" {
   count      = (var.create_kubeconfig_file && var.update_default_storage_class) ? 1 : 0
-  depends_on = [module.ebs_driver]
 
   provisioner "local-exec" {
     command = "kubectl annotate --overwrite storageclass ${local.default_storage_class} storageclass.kubernetes.io/is-default-class=false"
@@ -324,7 +311,7 @@ resource "null_resource" "update_default_storage_class" {
   }
 
   provisioner "local-exec" {
-    command = "kubectl annotate --overwrite storageclass ${module.ebs_driver.storage_class_name} storageclass.kubernetes.io/is-default-class=true"
+    command = "kubectl annotate --overwrite storageclass ${module.efs_driver.storage_class_name} storageclass.kubernetes.io/is-default-class=true"
     environment = {
       KUBECONFIG = local.kubeconfig_file
     }
