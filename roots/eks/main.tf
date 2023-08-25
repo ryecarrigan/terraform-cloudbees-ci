@@ -270,16 +270,6 @@ module "external_dns" {
   route53_zone_id = data.aws_route53_zone.domain.id
 }
 
-module "kubernetes_dashboard" {
-  depends_on = [module.aws_load_balancer_controller]
-  for_each   = var.install_kubernetes_dashboard ? local.this : []
-  source     = "../../modules/kubernetes-dashboard"
-
-  host_name           = "${var.dashboard_subdomain}.${var.domain_name}"
-  ingress_annotations = local.alb_annotations
-  ingress_class_name  = local.ingress_class_name
-}
-
 module "prometheus" {
   depends_on = [module.aws_load_balancer_controller]
   for_each   = var.install_prometheus ? local.this : []
