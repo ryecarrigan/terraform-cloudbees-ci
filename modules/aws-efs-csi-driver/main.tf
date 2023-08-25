@@ -1,61 +1,30 @@
-data "aws_iam_policy_document" "assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-
-    condition {
-      test     = "StringEquals"
-      values   = ["system:serviceaccount:kube-system:${var.service_account_name}"]
-      variable = "${var.oidc_issuer}:sub"
-    }
-
-    principals {
-      type        = "Federated"
-      identifiers = ["arn:${var.partition_id}:iam::${var.aws_account_id}:oidc-provider/${var.oidc_issuer}"]
-    }
-  }
-}
-
 locals {
   name_prefix = "${var.cluster_name}_${var.release_name}"
-
-  values = yamlencode({
-    controller = {
-      serviceAccount = {
-        annotations = {
-          "eks.${var.partition_dns}/role-arn" = aws_iam_role.this.arn
-        }
-
-        name = var.service_account_name
-      }
-    }
-
-    storageClasses = [{
-      allowVolumeExpansion = true
-
-      name = var.storage_class_name
-
-      parameters = {
-        directoryPerms   = "700"
-        fileSystemId     = aws_efs_file_system.this.id
-        provisioningMode = "efs-ap"
-        uid              = var.storage_class_uid
-      }
-    }]
-  })
-}
-
-resource "aws_iam_policy" "this" {
-  name_prefix = substr(local.name_prefix, 0, 102)
-  policy      = file("${path.module}/policy.json")
 }
 
 resource "aws_iam_role" "this" {
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
-  name_prefix        = substr(local.name_prefix, 0, 38)
+  assume_role_policy = jsonencode({
+    "Version" = "2012-10-17"
+    "Statement" = [{
+      "Effect" = "Allow",
+      "Principal" = {
+        "Federated": var.oidc_provider_arn
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition" = {
+        "StringLike" = {
+          "${var.oidc_issuer}:sub" = "system:serviceaccount:kube-system:efs-csi-*",
+          "${var.oidc_issuer}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+
+  name_prefix = substr(local.name_prefix, 0, 38)
 }
 
 resource "aws_iam_role_policy_attachment" "this" {
-  policy_arn = aws_iam_policy.this.arn
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy"
   role       = aws_iam_role.this.name
 }
 
@@ -102,11 +71,26 @@ resource "aws_security_group_rule" "ingress" {
   type                     = "ingress"
 }
 
-resource "helm_release" "this" {
-  chart      = "aws-efs-csi-driver"
-  name       = var.release_name
-  namespace  = "kube-system"
-  repository = "https://kubernetes-sigs.github.io/aws-efs-csi-driver"
-  values     = [local.values]
-  version    = var.release_version
+resource "aws_eks_addon" "this" {
+  depends_on = [aws_iam_role_policy_attachment.this]
+
+  addon_name               = "aws-efs-csi-driver"
+  cluster_name             = var.cluster_name
+  service_account_role_arn = aws_iam_role.this.arn
+}
+
+resource "kubernetes_storage_class" "this" {
+  metadata {
+    name = var.storage_class_name
+  }
+
+  storage_provisioner    = "efs.csi.aws.com"
+  volume_binding_mode    = "Immediate"
+
+  parameters = {
+    directoryPerms   = "700"
+    fileSystemId     = aws_efs_file_system.this.id
+    provisioningMode = "efs-ap"
+    uid              = var.storage_class_uid
+  }
 }

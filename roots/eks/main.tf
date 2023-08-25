@@ -251,11 +251,10 @@ module "efs_driver" {
   depends_on = [module.eks]
   source     = "../../modules/aws-efs-csi-driver"
 
-  aws_account_id         = local.aws_account_id
-  aws_region             = local.aws_region
   cluster_name           = local.cluster_name
   node_security_group_id = module.eks.node_security_group_id
   oidc_issuer            = local.oidc_issuer
+  oidc_provider_arn      = local.oidc_provider_arn
   private_subnet_ids     = module.vpc.private_subnets
   storage_class_uid      = var.storage_class_uid
   vpc_id                 = module.vpc.vpc_id
@@ -322,7 +321,7 @@ resource "null_resource" "update_default_storage_class" {
   }
 
   provisioner "local-exec" {
-    command = "kubectl annotate --overwrite storageclass ${module.ebs_driver.storage_class_name} storageclass.kubernetes.io/is-default-class=true"
+    command = "kubectl annotate --overwrite storageclass ${module.efs_driver.storage_class_name} storageclass.kubernetes.io/is-default-class=true"
     environment = {
       KUBECONFIG = local.kubeconfig_file
     }
