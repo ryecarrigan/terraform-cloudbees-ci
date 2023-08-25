@@ -241,11 +241,10 @@ module "ebs_driver" {
   depends_on = [module.eks]
   source     = "../../modules/aws-ebs-csi-driver"
 
-  aws_account_id = local.aws_account_id
-  aws_region     = local.aws_region
-  cluster_name   = local.cluster_name
-  oidc_issuer    = local.oidc_issuer
-  volume_tags    = var.tags
+  cluster_name      = local.cluster_name
+  oidc_issuer       = local.oidc_issuer
+  oidc_provider_arn = local.oidc_provider_arn
+  volume_tags       = var.tags
 }
 
 module "efs_driver" {
@@ -314,7 +313,6 @@ resource "null_resource" "update_kubeconfig" {
 
 resource "null_resource" "update_default_storage_class" {
   count      = (var.create_kubeconfig_file && var.update_default_storage_class) ? 1 : 0
-  depends_on = [module.ebs_driver]
 
   provisioner "local-exec" {
     command = "kubectl annotate --overwrite storageclass ${local.default_storage_class} storageclass.kubernetes.io/is-default-class=false"
