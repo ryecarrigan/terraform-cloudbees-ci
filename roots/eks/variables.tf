@@ -73,6 +73,26 @@ variable "kubernetes_version" {
   }
 }
 
+variable "node_group_desired" {
+  default = 1
+  type    = number
+}
+
+variable "node_group_max" {
+  default = 4
+  type    = number
+}
+
+variable "node_group_min" {
+  default = 1
+  type    = number
+}
+
+variable "single_node_group_per_az" {
+  default = true
+  type    = bool
+}
+
 variable "ssh_cidr_blocks" {
   default = ["0.0.0.0/32"]
   type    = list(string)

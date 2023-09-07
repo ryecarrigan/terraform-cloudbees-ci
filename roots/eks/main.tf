@@ -47,6 +47,20 @@ locals {
   this                   = toset(["this"])
   workspace_suffix       = terraform.workspace == "default" ? "" : "-${terraform.workspace}"
 
+  node_group_per_az = { for index, zone in local.availability_zones :
+    "${local.cluster_name}-${zone}" => {
+      iam_role_name = substr("${local.cluster_name}-${zone}", 0, 38)
+      subnet_ids    = [module.vpc.private_subnets[index]]
+    }
+  }
+
+  node_group_per_region = {
+    (local.cluster_name) : {
+      iam_role_name = substr(local.cluster_name, 0, 38)
+      subnet_ids    = module.vpc.private_subnets
+    }
+  }
+
   vpc_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
   }
@@ -136,10 +150,12 @@ module "eks" {
   cluster_endpoint_public_access       = true
   cluster_endpoint_public_access_cidrs = var.ssh_cidr_blocks
 
+  eks_managed_node_groups = var.single_node_group_per_az ? local.node_group_per_az : local.node_group_per_region
+
   eks_managed_node_group_defaults = {
-    min_size     = 1
-    max_size     = 4
-    desired_size = 1
+    min_size     = var.node_group_min
+    max_size     = var.node_group_max
+    desired_size = var.node_group_desired
 
     create_iam_role       = true
     create_security_group = false
@@ -147,13 +163,6 @@ module "eks" {
     key_name              = var.key_name
     labels                = {}
     launch_template_tags  = var.tags
-  }
-
-  eks_managed_node_groups = { for index, zone in local.availability_zones :
-    "${local.cluster_name}-${zone}" => {
-      iam_role_name = substr("${local.cluster_name}-${zone}", 0, 38)
-      subnet_ids    = [module.vpc.private_subnets[index]]
-    }
   }
 
   node_security_group_additional_rules = {
