@@ -64,11 +64,11 @@ variable "kubeconfig_file" {
 }
 
 variable "kubernetes_version" {
-  default = "1.25"
+  default = "1.26"
   type    = string
 
   validation {
-    condition     = contains(["1.22", "1.23", "1.24", "1.25"], var.kubernetes_version)
+    condition     = contains(["1.22", "1.23", "1.24", "1.25", "1.26"], var.kubernetes_version)
     error_message = "Provided Kubernetes version is not supported by EKS and/or CloudBees."
   }
 }
