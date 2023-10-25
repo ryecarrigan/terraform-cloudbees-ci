@@ -46,8 +46,6 @@ module "cloudbees_cd" {
 
 locals {
   install_ci     = alltrue([var.install_ci, var.ci_host_name != ""])
-  bundle_data    = { for file in fileset(local.bundle_dir, "*.{yml,yaml}") : file => file("${local.bundle_dir}/${file}") }
-  bundle_dir     = "${path.module}/${var.bundle_dir}"
   ci_values      = fileexists(local.ci_values_file) ? file(local.ci_values_file) : null
   ci_values_file = "${path.module}/${var.ci_values_file}"
   groovy_data    = { for file in fileset(local.groovy_dir, "*.groovy") : file => file("${local.groovy_dir}/${file}") }
@@ -59,7 +57,6 @@ module "cloudbees_ci" {
   count  = local.install_ci ? 1 : 0
   source = "../../modules/cloudbees-ci"
 
-  bundle_data             = local.bundle_data
   chart_version           = var.ci_chart_version
   create_service_monitors = var.create_service_monitors
   create_secrets_role     = true
