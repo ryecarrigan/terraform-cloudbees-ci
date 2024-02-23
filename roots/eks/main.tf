@@ -47,19 +47,8 @@ locals {
   this                   = toset(["this"])
   workspace_suffix       = terraform.workspace == "default" ? "" : "-${terraform.workspace}"
 
-  node_group_per_az = { for index, zone in local.availability_zones :
-    "${local.cluster_name}-${zone}" => {
-      iam_role_name = substr("${local.cluster_name}-${zone}", 0, 38)
-      subnet_ids    = [module.vpc.private_subnets[index]]
-    }
-  }
-
-  node_group_per_region = {
-    (local.cluster_name) : {
-      iam_role_name = substr(local.cluster_name, 0, 38)
-      subnet_ids    = module.vpc.private_subnets
-    }
-  }
+  agents_role_name      = substr("${local.cluster_name}-agents", 0, 38)
+  controllers_role_name = substr("${local.cluster_name}-controllers", 0, 38)
 
   vpc_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
@@ -139,7 +128,7 @@ module "bastion" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "19.16.0"
+  version = "19.20.0"
 
   cluster_name    = local.cluster_name
   cluster_version = var.kubernetes_version
@@ -150,7 +139,28 @@ module "eks" {
   cluster_endpoint_public_access       = true
   cluster_endpoint_public_access_cidrs = var.ssh_cidr_blocks
 
-  eks_managed_node_groups = var.single_node_group_per_az ? local.node_group_per_az : local.node_group_per_region
+  eks_managed_node_groups = {
+    (local.cluster_name) = {
+      desired_size  = (var.node_group_desired < 1) ? 1 : var.node_group_desired
+      iam_role_name = substr(local.cluster_name, 0, 38)
+      min_size      = (var.node_group_min < 1) ? 1 : var.node_group_min
+    }
+
+    "${local.cluster_name}_controllers" = {
+      iam_role_name = local.controllers_role_name
+      labels = {
+        "jenkins" = "controller"
+      }
+    }
+
+    "${local.cluster_name}_agents" = {
+      capacity_type = "SPOT"
+      iam_role_name = local.agents_role_name
+      labels = {
+        "jenkins" = "agent"
+      }
+    }
+  }
 
   eks_managed_node_group_defaults = {
     min_size     = var.node_group_min
@@ -159,10 +169,12 @@ module "eks" {
 
     create_iam_role       = true
     create_security_group = false
+    iam_role_use_name_prefix = false
     instance_types        = var.instance_types
     key_name              = var.key_name
     labels                = {}
     launch_template_tags  = var.tags
+    subnet_ids            = module.vpc.private_subnets
   }
 
   node_security_group_additional_rules = {
