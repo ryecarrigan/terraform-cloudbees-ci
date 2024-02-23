@@ -19,6 +19,9 @@ OperationsCenter:
       scmBranch: main
       scmBundlePath: /cjoc
 
+  NodeSelector:
+    jenkins: controller
+
   Resources:
     Limits:
       Cpu: 2
