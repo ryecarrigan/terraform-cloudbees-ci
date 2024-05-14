@@ -24,7 +24,7 @@ variable "cidr_block" {
 }
 
 variable "cluster_autoscaler_tag" {
-  default = "v1.25.2"
+  default = "v1.28.4"
   type    = string
 }
 
@@ -49,7 +49,7 @@ variable "install_prometheus" {
 }
 
 variable "instance_types" {
-  default = ["m6a.xlarge", "m5a.xlarge", "m5.xlarge"]
+  default = ["m7a.xlarge", "m6a.xlarge", "m5a.xlarge"]
   type    = set(string)
 }
 
@@ -64,11 +64,11 @@ variable "kubeconfig_file" {
 }
 
 variable "kubernetes_version" {
-  default = "1.27"
+  default = "1.28"
   type    = string
 
   validation {
-    condition     = contains(["1.23", "1.24", "1.25", "1.26", "1.27"], var.kubernetes_version)
+    condition     = contains(["1.24", "1.25", "1.26", "1.27", "1.28"], var.kubernetes_version)
     error_message = "Provided Kubernetes version is not supported by EKS and/or CloudBees."
   }
 }
