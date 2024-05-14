@@ -306,35 +306,3 @@ module "cluster_metrics" {
   depends_on = [module.eks]
   source     = "../../modules/metrics-server"
 }
-
-
-################################################################################
-# Post-provisioning commands
-################################################################################
-
-resource "null_resource" "update_kubeconfig" {
-  count      = var.create_kubeconfig_file ? 1 : 0
-  depends_on = [module.eks]
-
-  provisioner "local-exec" {
-    command = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --kubeconfig ${local.kubeconfig_file}"
-  }
-}
-
-resource "null_resource" "update_default_storage_class" {
-  count      = (var.create_kubeconfig_file && var.update_default_storage_class) ? 1 : 0
-
-  provisioner "local-exec" {
-    command = "kubectl annotate --overwrite storageclass ${local.default_storage_class} storageclass.kubernetes.io/is-default-class=false"
-    environment = {
-      KUBECONFIG = local.kubeconfig_file
-    }
-  }
-
-  provisioner "local-exec" {
-    command = "kubectl annotate --overwrite storageclass ${module.efs_driver.storage_class_name} storageclass.kubernetes.io/is-default-class=true"
-    environment = {
-      KUBECONFIG = local.kubeconfig_file
-    }
-  }
-}

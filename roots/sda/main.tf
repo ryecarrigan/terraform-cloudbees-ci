@@ -86,20 +86,3 @@ module "mysql" {
   root_password = local.db_password
   user_name     = lookup(local.db_values, "dbUser", "flow")
 }
-
-
-################################################################################
-# Post-provisioning commands
-################################################################################
-
-resource "null_resource" "update_kubeconfig" {
-  count      = var.update_kubeconfig ? 1 : 0
-  depends_on = [module.cloudbees_ci]
-
-  provisioner "local-exec" {
-    command = "kubectl config set-context --current --namespace=${var.ci_namespace}"
-    environment = {
-      KUBECONFIG = var.kubeconfig_file
-    }
-  }
-}
