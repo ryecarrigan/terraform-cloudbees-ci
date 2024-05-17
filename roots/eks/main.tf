@@ -39,7 +39,6 @@ locals {
   cluster_endpoint       = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   cluster_name           = "${var.cluster_name}${local.workspace_suffix}"
-  default_storage_class  = "gp2"
   ingress_class_name     = "alb"
   kubeconfig_file        = "${path.cwd}/${var.kubeconfig_file}"
   oidc_issuer            = trimprefix(module.eks.cluster_oidc_issuer_url, "https://")
