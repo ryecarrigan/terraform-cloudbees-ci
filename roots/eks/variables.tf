@@ -94,8 +94,7 @@ variable "single_node_group_per_az" {
 }
 
 variable "ssh_cidr_blocks" {
-  default = ["0.0.0.0/32"]
-  type    = list(string)
+  type = list(string)
 
   validation {
     condition     = contains([for block in var.ssh_cidr_blocks : try(cidrhost(block, 0), "")], "") == false
