@@ -112,11 +112,6 @@ variable "tags" {
   type    = map(string)
 }
 
-variable "update_default_storage_class" {
-  default = true
-  type    = string
-}
-
 variable "zone_count" {
   default = 3
   type    = number
