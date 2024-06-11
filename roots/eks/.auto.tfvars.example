@@ -1,6 +1,7 @@
 # Required variables
 cluster_name = # Will be appended with terraform workspace name (unless default)
 domain_name = # Must be an existing Route53 zone
+ssh_cidr_blocks = # Plan will reject if any invalid CIDRs are provided
 
 # Optional variables
 #bastion_enabled # Defaults to false
@@ -17,7 +18,6 @@ domain_name = # Must be an existing Route53 zone
 #node_group_min = # Defaults to 1
 #node_group_max = # Defaults to 4
 #single_node_group_per_az = # Defaults to true
-#ssh_cidr_blocks = # Defaults to ["0.0.0.0/32"]
 #storage_class_uid = # Defaults to 1000
 #tags = # Defaults to empty map
 #zone_count = # Defaults to 3
