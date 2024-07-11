@@ -19,3 +19,15 @@ post-eks:
 
 post-sda:
 	kubectl config set-context --current --namespace=`terraform -chdir=roots/sda output -raw ci_namespace`
+
+
+up:
+	make eks ACTION="apply -auto-approve"
+	make post-eks
+	make sda ACTION="apply -auto-approve"
+	make post-sda
+
+
+down:
+	make sda ACTION="destroy -auto-approve"
+	make eks ACTION="destroy -auto-approve"
