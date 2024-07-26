@@ -91,6 +91,8 @@ resource "kubernetes_storage_class" "this" {
     directoryPerms   = "700"
     fileSystemId     = aws_efs_file_system.this.id
     provisioningMode = "efs-ap"
+    reuseAccessPoint = true
+    subPathPattern   = "$${.PVC.name}"
     uid              = var.storage_class_uid
   }
 }
