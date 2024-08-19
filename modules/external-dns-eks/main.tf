@@ -1,78 +1,49 @@
-data "aws_iam_policy_document" "assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-
-    condition {
-      test     = "StringEquals"
-      values   = ["system:serviceaccount:kube-system:${var.service_account_name}"]
-      variable = "${var.oidc_issuer}:sub"
-    }
-
-    principals {
-      type        = "Federated"
-      identifiers = ["arn:${var.partition_id}:iam::${var.aws_account_id}:oidc-provider/${var.oidc_issuer}"]
-    }
-  }
-}
-
-data "aws_iam_policy_document" "policy" {
-  statement {
-    actions   = ["route53:ChangeResourceRecordSets"]
-    effect    = "Allow"
-    resources = [data.aws_route53_zone.this.arn]
-  }
-
-  statement {
-    actions = [
-      "route53:ListHostedZones",
-      "route53:ListResourceRecordSets",
-    ]
-
-    effect    = "Allow"
-    resources = ["*"]
-  }
-}
-
 data "aws_route53_zone" "this" {
   zone_id = var.route53_zone_id
 }
 
 locals {
+  name_prefix = "${var.cluster_name}_${var.release_name}"
+  namespace   = "kube-system"
+  role_name   = substr(local.name_prefix, 0, 38)
+
   values = yamlencode({
-    provider = "aws"
+    extraArgs = ["--zone-id-filter=${data.aws_route53_zone.this.id}"]
+
+    provider = {
+      name = "aws"
+    }
 
     serviceAccount = {
       annotations = {
-        "eks.${var.partition_dns}/role-arn": aws_iam_role.this.arn
+        "eks.amazonaws.com/role-arn": module.service_account_role.iam_role_arn
       }
 
       name = var.service_account_name
     }
-
-    zoneIdFilters = [data.aws_route53_zone.this.id]
   })
 }
 
-resource "aws_iam_policy" "this" {
-  name_prefix = "${var.cluster_name}_${var.release_name}"
-  policy      = data.aws_iam_policy_document.policy.json
-}
+module "service_account_role" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-resource "aws_iam_role" "this" {
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
-  name_prefix        = "${var.cluster_name}_${var.release_name}"
-}
+  attach_external_dns_policy    = true
+  external_dns_hosted_zone_arns = ["arn:aws:route53:::hostedzone/${var.route53_zone_id}"]
+  role_name_prefix              = local.role_name
 
-resource "aws_iam_role_policy_attachment" "this" {
-  policy_arn = aws_iam_policy.this.arn
-  role       = aws_iam_role.this.name
+  oidc_providers = {
+    main = {
+      provider_arn               = var.oidc_arn
+      namespace_service_accounts = ["${local.namespace}:${var.service_account_name}"]
+    }
+  }
 }
 
 resource "helm_release" "this" {
   chart      = "external-dns"
   name       = var.release_name
-  namespace  = "kube-system"
-  repository = "https://charts.bitnami.com/bitnami"
+  namespace  = local.namespace
+  repository = "https://kubernetes-sigs.github.io/external-dns"
   values     = [local.values]
-  version    = var.release_version
+  version    = var.chart_version
 }

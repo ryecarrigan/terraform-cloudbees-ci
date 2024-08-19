@@ -1,40 +1,29 @@
 locals {
   name_prefix = "${var.cluster_name}_${var.release_name}"
+  namespace   = "kube-system"
+  role_name   = substr(local.name_prefix, 0, 38)
+  service_account = "ebs-csi-controller-sa"
   volume_tags = {for k, v in var.volume_tags: "tagSpecification_${k}" => "${k}=${v}"}
 }
 
-resource "aws_iam_role" "this" {
-  assume_role_policy = jsonencode({
-    "Version" = "2012-10-17"
-    "Statement" = [{
-      "Effect" = "Allow",
-      "Principal" = {
-        "Federated": var.oidc_provider_arn
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition" = {
-        "StringLike" = {
-          "${var.oidc_issuer}:sub" = "system:serviceaccount:kube-system:ebs-csi-*",
-          "${var.oidc_issuer}:aud" = "sts.amazonaws.com"
-        }
-      }
-    }]
-  })
+module "service_account_role" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  name_prefix = substr(local.name_prefix, 0, 38)
-}
+  attach_ebs_csi_policy = true
+  role_name_prefix      = local.role_name
 
-resource "aws_iam_role_policy_attachment" "this" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-  role       = aws_iam_role.this.name
+  oidc_providers = {
+    main = {
+      provider_arn               = var.oidc_arn
+      namespace_service_accounts = ["${local.namespace}:${local.service_account}"]
+    }
+  }
 }
 
 resource "aws_eks_addon" "this" {
-  depends_on = [aws_iam_role_policy_attachment.this]
-
   addon_name               = "aws-ebs-csi-driver"
   cluster_name             = var.cluster_name
-  service_account_role_arn = aws_iam_role.this.arn
+  service_account_role_arn = module.service_account_role.iam_role_arn
 }
 
 resource "kubernetes_storage_class" "this" {

@@ -1,7 +1,3 @@
-variable "aws_account_id" {
-  type = string
-}
-
 variable "aws_region" {
   type = string
 }
@@ -14,18 +10,8 @@ variable "image_tag" {
   type = string
 }
 
-variable "oidc_issuer" {
+variable "oidc_arn" {
   type = string
-}
-
-variable "partition_dns" {
-  default = "amazonaws.com"
-  type    = string
-}
-
-variable "partition_id" {
-  default = "aws"
-  type    = string
 }
 
 variable "release_name" {
@@ -33,7 +19,7 @@ variable "release_name" {
 }
 
 variable "release_version" {
-  default = "9.29.1"
+  default = "9.37.0"
 }
 
 variable "service_account_name" {

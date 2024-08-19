@@ -1,37 +1,37 @@
 locals {
-  name_prefix = "${var.cluster_name}_${var.release_name}"
+  name_prefix     = "${var.cluster_name}_${var.release_name}"
+  namespace       = "kube-system"
+  protection      = (var.replication_protection) ? "ENABLED" : "DISABLED"
+  role_name       = substr(local.name_prefix, 0, 38)
+  service_account = "efs-csi-controller-sa"
 }
 
-resource "aws_iam_role" "this" {
-  assume_role_policy = jsonencode({
-    "Version" = "2012-10-17"
-    "Statement" = [{
-      "Effect" = "Allow",
-      "Principal" = {
-        "Federated": var.oidc_provider_arn
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition" = {
-        "StringLike" = {
-          "${var.oidc_issuer}:sub" = "system:serviceaccount:kube-system:efs-csi-*",
-          "${var.oidc_issuer}:aud" = "sts.amazonaws.com"
-        }
-      }
-    }]
-  })
+module "service_account_role" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  name_prefix = substr(local.name_prefix, 0, 38)
-}
+  attach_efs_csi_policy = true
+  role_name_prefix      = local.role_name
 
-resource "aws_iam_role_policy_attachment" "this" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy"
-  role       = aws_iam_role.this.name
+  oidc_providers = {
+    main = {
+      provider_arn               = var.oidc_arn
+      namespace_service_accounts = ["${local.namespace}:${local.service_account}"]
+    }
+  }
 }
 
 resource "aws_efs_file_system" "this" {
   encrypted = var.encrypt_file_system
   tags = {
     Name = local.name_prefix
+  }
+
+  protection {
+    replication_overwrite = local.protection
+  }
+
+  lifecycle {
+    ignore_changes = [protection]
   }
 }
 
@@ -72,11 +72,9 @@ resource "aws_security_group_rule" "ingress" {
 }
 
 resource "aws_eks_addon" "this" {
-  depends_on = [aws_iam_role_policy_attachment.this]
-
   addon_name               = "aws-efs-csi-driver"
   cluster_name             = var.cluster_name
-  service_account_role_arn = aws_iam_role.this.arn
+  service_account_role_arn = module.service_account_role.iam_role_arn
 }
 
 resource "kubernetes_storage_class" "this" {
@@ -88,11 +86,12 @@ resource "kubernetes_storage_class" "this" {
   volume_binding_mode    = "Immediate"
 
   parameters = {
-    directoryPerms   = "700"
-    fileSystemId     = aws_efs_file_system.this.id
-    provisioningMode = "efs-ap"
-    reuseAccessPoint = true
-    subPathPattern   = "$${.PVC.name}"
-    uid              = var.storage_class_uid
+    directoryPerms        = "700"
+    ensureUniqueDirectory = false
+    fileSystemId          = aws_efs_file_system.this.id
+    provisioningMode      = "efs-ap"
+    subPathPattern        = "$${.PVC.name}"
+    gid                   = var.storage_class_gid
+    uid                   = var.storage_class_uid
   }
 }

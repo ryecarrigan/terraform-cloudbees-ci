@@ -16,22 +16,8 @@ variable "node_security_group_id" {
   type = string
 }
 
-variable "oidc_issuer" {
+variable "oidc_arn" {
   type = string
-}
-
-variable "oidc_provider_arn" {
-  type = string
-}
-
-variable "partition_dns" {
-  default = "amazonaws.com"
-  type    = string
-}
-
-variable "partition_id" {
-  default = "aws"
-  type    = string
 }
 
 variable "private_subnet_ids" {
@@ -41,14 +27,21 @@ variable "private_subnet_ids" {
 
 variable "release_name" {
   default = "aws-efs-csi-driver"
+  type    = string
 }
 
-variable "release_version" {
-  default = "2.4.7"
+variable "replication_protection" {
+  default = true
+  type    = bool
 }
 
 variable "storage_class_name" {
   default = "efs-sc"
+  type    = string
+}
+
+variable "storage_class_gid" {
+  default = "1000"
   type    = string
 }
 

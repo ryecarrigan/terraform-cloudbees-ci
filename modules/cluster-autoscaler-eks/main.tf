@@ -1,22 +1,7 @@
-data "aws_iam_policy_document" "assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-
-    condition {
-      test     = "StringEquals"
-      values   = ["system:serviceaccount:kube-system:${var.service_account_name}"]
-      variable = "${var.oidc_issuer}:sub"
-    }
-
-    principals {
-      type        = "Federated"
-      identifiers = ["arn:${var.partition_id}:iam::${var.aws_account_id}:oidc-provider/${var.oidc_issuer}"]
-    }
-  }
-}
-
 locals {
   name_prefix = "${var.cluster_name}_${var.release_name}"
+  namespace   = "kube-system"
+  role_name   = substr(local.name_prefix, 0, 38)
 
   values = yamlencode({
     autoDiscovery = {
@@ -35,32 +20,34 @@ locals {
       serviceAccount = {
         name = var.service_account_name
         annotations = {
-          "eks.${var.partition_dns}/role-arn" = aws_iam_role.this.arn
+          "eks.amazonaws.com/role-arn" = module.service_account_role.iam_role_arn
         }
       }
     }
   })
 }
 
-resource "aws_iam_policy" "this" {
-  name_prefix = substr(local.name_prefix, 0, 102)
-  policy      = file("${path.module}/policy.json")
-}
+data "aws_region" "this" {}
 
-resource "aws_iam_role" "this" {
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
-  name_prefix        = substr(local.name_prefix, 0, 38)
-}
+module "service_account_role" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-resource "aws_iam_role_policy_attachment" "ebs_policy_attachment" {
-  policy_arn = aws_iam_policy.this.arn
-  role       = aws_iam_role.this.name
+  attach_cluster_autoscaler_policy = true
+  cluster_autoscaler_cluster_names = [var.cluster_name]
+  role_name_prefix                 = local.role_name
+
+  oidc_providers = {
+    main = {
+      provider_arn               = var.oidc_arn
+      namespace_service_accounts = ["${local.namespace}:${var.service_account_name}"]
+    }
+  }
 }
 
 resource "helm_release" "this" {
   chart      = "cluster-autoscaler"
   name       = var.release_name
-  namespace  = "kube-system"
+  namespace  = local.namespace
   repository = "https://kubernetes.github.io/autoscaler"
   values     = [local.values]
   version    = var.release_version
