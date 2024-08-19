@@ -1,4 +1,6 @@
 provider "aws" {
+  region = var.aws_region
+
   default_tags {
     tags = var.tags
   }
@@ -41,7 +43,6 @@ locals {
   cluster_name           = "${var.cluster_name}${local.workspace_suffix}"
   ingress_class_name     = "alb"
   kubeconfig_file        = "${path.cwd}/${var.kubeconfig_file}"
-  oidc_issuer            = trimprefix(module.eks.cluster_oidc_issuer_url, "https://")
   oidc_provider_arn      = module.eks.oidc_provider_arn
   this                   = toset(["this"])
   workspace_suffix       = terraform.workspace == "default" ? "" : "-${terraform.workspace}"
@@ -127,7 +128,7 @@ module "bastion" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.0"
+  version = "20.22.0"
 
   cluster_name    = local.cluster_name
   cluster_version = var.kubernetes_version
@@ -144,6 +145,10 @@ module "eks" {
     eks-pod-identity-agent = {
       most_recent = true
     }
+  }
+
+  cluster_upgrade_policy = {
+    support_type = "STANDARD"
   }
 
   eks_managed_node_groups = {
@@ -244,58 +249,51 @@ module "acm_certificate" {
 ################################################################################
 
 module "aws_load_balancer_controller" {
-  depends_on = [module.acm_certificate]
+  depends_on = [module.eks, module.acm_certificate]
   source     = "../../modules/aws-load-balancer-controller"
 
-  aws_account_id            = local.aws_account_id
-  aws_region                = local.aws_region
-  cluster_name              = local.cluster_name
-  cluster_security_group_id = module.eks.cluster_security_group_id
-  node_security_group_id    = module.eks.node_security_group_id
-  oidc_issuer               = local.oidc_issuer
+  cluster_name = local.cluster_name
+  oidc_arn     = local.oidc_provider_arn
 }
 
 module "cluster_autoscaler" {
   depends_on = [module.eks]
   source     = "../../modules/cluster-autoscaler-eks"
 
-  aws_account_id     = local.aws_account_id
-  aws_region         = local.aws_region
-  cluster_name       = local.cluster_name
-  image_tag          = local.cluster_autoscaler_tag
-  oidc_issuer        = local.oidc_issuer
+  aws_region   = local.aws_region
+  cluster_name = local.cluster_name
+  image_tag    = local.cluster_autoscaler_tag
+  oidc_arn     = local.oidc_provider_arn
 }
 
 module "ebs_driver" {
-  depends_on = [module.eks]
+  depends_on = [module.aws_load_balancer_controller]
   source     = "../../modules/aws-ebs-csi-driver"
 
-  cluster_name      = local.cluster_name
-  oidc_issuer       = local.oidc_issuer
-  oidc_provider_arn = local.oidc_provider_arn
-  volume_tags       = var.tags
+  cluster_name = local.cluster_name
+  oidc_arn     = local.oidc_provider_arn
+  volume_tags  = var.tags
 }
 
 module "efs_driver" {
-  depends_on = [module.eks]
+  depends_on = [module.aws_load_balancer_controller]
   source     = "../../modules/aws-efs-csi-driver"
 
   cluster_name           = local.cluster_name
   node_security_group_id = module.eks.node_security_group_id
-  oidc_issuer            = local.oidc_issuer
-  oidc_provider_arn      = local.oidc_provider_arn
+  oidc_arn               = local.oidc_provider_arn
   private_subnet_ids     = module.vpc.private_subnets
-  storage_class_uid      = var.storage_class_uid
+  replication_protection = var.efs_replication_protection
   vpc_id                 = module.vpc.vpc_id
 }
 
 module "external_dns" {
-  depends_on = [module.eks]
+  depends_on = [module.aws_load_balancer_controller]
   source     = "../../modules/external-dns-eks"
 
   aws_account_id  = local.aws_account_id
   cluster_name    = local.cluster_name
-  oidc_issuer     = local.oidc_issuer
+  oidc_arn        = local.oidc_provider_arn
   route53_zone_id = data.aws_route53_zone.domain.id
 }
 
@@ -311,6 +309,14 @@ module "prometheus" {
 }
 
 module "cluster_metrics" {
-  depends_on = [module.eks]
+  depends_on = [module.aws_load_balancer_controller]
   source     = "../../modules/metrics-server"
+}
+
+module "velero" {
+  depends_on = [module.efs_driver]
+  source     = "../../modules/velero-aws"
+
+  cluster_name = local.cluster_name
+  oidc_arn     = local.oidc_provider_arn
 }

@@ -6,10 +6,18 @@ output "cluster_name" {
   value = module.eks.cluster_name
 }
 
+output "efs_filesystem_id" {
+  value = module.efs_driver.filesystem_id
+}
+
 output "kubeconfig_filename" {
   value = local.kubeconfig_file
 }
 
 output "storage_class_name" {
   value = module.efs_driver.storage_class_name
+}
+
+output "velero_bucket" {
+  value = module.velero.bucket_name
 }

@@ -8,6 +8,11 @@ variable "domain_name" {
 }
 
 # Optional variables
+variable "aws_region" {
+  default = "us-east-1"
+  type    = string
+}
+
 variable "bastion_enabled" {
   default = false
   type    = bool
@@ -24,7 +29,7 @@ variable "cidr_block" {
 }
 
 variable "cluster_autoscaler_tag" {
-  default = "v1.28.4"
+  default = "v1.28.6"
   type    = string
 }
 
@@ -34,6 +39,11 @@ variable "create_acm_certificate" {
 }
 
 variable "create_kubeconfig_file" {
+  default = true
+  type    = bool
+}
+
+variable "efs_replication_protection" {
   default = true
   type    = bool
 }
@@ -66,11 +76,6 @@ variable "kubeconfig_file" {
 variable "kubernetes_version" {
   default = "1.28"
   type    = string
-
-  validation {
-    condition     = contains(["1.24", "1.25", "1.26", "1.27", "1.28"], var.kubernetes_version)
-    error_message = "Provided Kubernetes version is not supported by EKS and/or CloudBees."
-  }
 }
 
 variable "node_group_desired" {
