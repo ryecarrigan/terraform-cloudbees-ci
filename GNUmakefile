@@ -1,14 +1,20 @@
 ACTION ?= plan
 
 
-.ONESHELL:
-
 eks:
 	terraform -chdir=roots/eks $(ACTION)
 
 
 sda:
 	terraform -chdir=roots/sda $(ACTION)
+
+
+replication:
+	terraform -chdir=roots/replication $(ACTION)
+
+
+replication-timestamp:
+	aws efs describe-replication-configurations --file-system-id `terraform -chdir=roots/replication output -raw primary_file_system`| jq -r ".Replications[].Destinations[] | select(.FileSystemId==\"`terraform -chdir=roots/replication output -raw secondary_file_system`\") | .LastReplicatedTimestamp"
 
 
 post-eks:

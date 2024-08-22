@@ -1,0 +1,14 @@
+# Optional common configuration
+#tags = # Defaults to empty map
+
+# Remote backend configuration
+name_prefix =
+remote_state_backend = # Defaults to s3
+remote_state_config =
+primary_workspace =
+secondary_workspace =
+
+# Optional configuration
+primary_region = # Defaults to us-east-1
+replication_rule_id = # Defaults to velero
+secondary_region = # Defaults to us-east-1
