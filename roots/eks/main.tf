@@ -153,9 +153,7 @@ module "eks" {
 
   eks_managed_node_groups = {
     (local.cluster_name) = {
-      desired_size  = (var.node_group_desired < 1) ? 1 : var.node_group_desired
       iam_role_name = substr(local.cluster_name, 0, 38)
-      min_size      = (var.node_group_min < 1) ? 1 : var.node_group_min
     }
 
     "${local.cluster_name}_controllers" = {
@@ -174,9 +172,9 @@ module "eks" {
   }
 
   eks_managed_node_group_defaults = {
-    min_size     = var.node_group_min
+    min_size     = (var.node_group_min < 0) ? 0 : var.node_group_min
     max_size     = var.node_group_max
-    desired_size = var.node_group_desired
+    desired_size = (var.node_group_desired < 0) ? 0 : var.node_group_desired
 
     ami_type              = "AL2_x86_64"
     capacity_type         = "SPOT"
