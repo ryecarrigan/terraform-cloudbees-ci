@@ -1,5 +1,9 @@
+variable "ami_id" {
+  type = string
+}
+
 variable "instance_type" {
-  default = "t3.nano"
+  default = "t4g.nano"
   type    = string
 }
 
@@ -24,6 +28,7 @@ variable "ssh_cidr_blocks" {
 variable "source_security_group_id" {
   type = string
 }
+
 variable "subnet_id" {
   type = string
 }
