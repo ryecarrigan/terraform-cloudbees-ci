@@ -43,6 +43,11 @@ variable "create_kubeconfig_file" {
   type    = bool
 }
 
+variable "create_s3_bucket" {
+  default = false
+  type    = bool
+}
+
 variable "efs_replication_protection" {
   default = true
   type    = bool

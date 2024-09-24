@@ -237,6 +237,15 @@ module "acm_certificate" {
   subdomain   = "*"
 }
 
+module "ci_cache" {
+  depends_on = [module.eks]
+  for_each   = var.create_s3_bucket ? local.this : []
+  source     = "../../modules/cloudbees-ci-s3"
+
+  bucket_prefix = var.cluster_name
+  iam_role      = local.controllers_role_name
+}
+
 
 ################################################################################
 # Kubernetes resources
