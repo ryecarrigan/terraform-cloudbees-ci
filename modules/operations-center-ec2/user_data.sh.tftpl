@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+wget -O /etc/yum.repos.d/cloudbees-core-oc.repo https://downloads.cloudbees.com/cloudbees-core/traditional/operations-center/rolling/rpm/cloudbees-core-oc.repo
+rpm --import "https://downloads.cloudbees.com/cloudbees-core/traditional/operations-center/rolling/rpm/cloudbees.com.key"
+
+dnf upgrade
+dnf install --assumeyes \
+  amazon-efs-utils \
+  git \
+  java-17-amazon-corretto-headless \
+;
+
+mkdir -p /var/lib/cloudbees-core-oc
+mount -t efs -o tls,iam,accesspoint=${access_point_id} ${file_system_id}: /var/lib/cloudbees-core-oc
+
+dnf install --assumeyes cloudbees-core-oc

@@ -1,0 +1,13 @@
+# Required variables
+cluster_name =
+domain_name =
+ssh_cidr_blocks =
+
+# Optional variables
+#aws_region = # Defaults to us-east-1
+#cidr_block = # Defaults to 10.0.0.0/16
+#instance_type = # Defaults to t4g.small
+#key_name = # Defaults to empty string
+#subdomain = # Defaults to 'trad'
+#tags = # Defaults to empty map
+#zone_count = # Defaults to 3
