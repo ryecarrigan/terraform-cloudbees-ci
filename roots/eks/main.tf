@@ -153,7 +153,9 @@ module "eks" {
 
   eks_managed_node_groups = {
     (local.cluster_name) = {
+      desired_size  = 1
       iam_role_name = substr(local.cluster_name, 0, 38)
+      min_size      = 1
     }
 
     "${local.cluster_name}_controllers" = {
