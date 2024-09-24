@@ -33,6 +33,10 @@ data "aws_route53_zone" "domain" {
   name = var.domain_name
 }
 
+data "aws_ssm_parameter" "this" {
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
+}
+
 locals {
   availability_zones     = slice(data.aws_availability_zones.available.names, 0, var.zone_count)
   aws_account_id         = data.aws_caller_identity.current.account_id
@@ -83,18 +87,7 @@ locals {
 ################################################################################
 
 module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "5.0.0"
-
-  name                 = "${local.cluster_name}-vpc"
-  cidr                 = var.cidr_block
-  azs                  = local.availability_zones
-  manage_default_network_acl = false
-  private_subnets      = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 100 + i)]
-  public_subnets       = [for i in range(0, var.zone_count) : cidrsubnet(var.cidr_block, 8, 200 + i)]
-  enable_nat_gateway   = true
-  single_nat_gateway   = true
-  enable_dns_hostnames = true
+  source = "../../modules/vpc"
 
   public_subnet_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "owned"
@@ -106,19 +99,22 @@ module "vpc" {
     "kubernetes.io/role/internal-elb"             = "1"
   }
 
-  tags = local.vpc_tags
+  resource_prefix = var.cluster_name
+  vpc_tags        = local.vpc_tags
 }
 
 module "bastion" {
   for_each = var.bastion_enabled ? local.this : []
   source   = "../../modules/aws-bastion"
 
+  ami_id                   = data.aws_ssm_parameter.this.value
+  instance_type            = "t4g.nano"
   key_name                 = var.key_name
   resource_prefix          = local.cluster_name
   source_security_group_id = module.eks.node_security_group_id
   ssh_cidr_blocks          = var.ssh_cidr_blocks
-  subnet_id                = module.vpc.public_subnets.0
-  vpc_id                   = module.vpc.vpc_id
+  subnet_id                = coalesce(module.vpc.public_subnet_ids...)
+  vpc_id                   = module.vpc.id
 }
 
 
@@ -132,8 +128,8 @@ module "eks" {
 
   cluster_name    = local.cluster_name
   cluster_version = var.kubernetes_version
-  subnet_ids      = module.vpc.private_subnets
-  vpc_id          = module.vpc.vpc_id
+  subnet_ids      = module.vpc.private_subnet_ids
+  vpc_id          = module.vpc.id
 
   enable_cluster_creator_admin_permissions = true
 
@@ -185,7 +181,7 @@ module "eks" {
     key_name              = var.key_name
     labels                = {}
     launch_template_tags  = var.tags
-    subnet_ids            = module.vpc.private_subnets
+    subnet_ids            = module.vpc.private_subnet_ids
   }
 
   node_security_group_additional_rules = {
@@ -280,9 +276,9 @@ module "efs_driver" {
   cluster_name           = local.cluster_name
   node_security_group_id = module.eks.node_security_group_id
   oidc_arn               = local.oidc_provider_arn
-  private_subnet_ids     = module.vpc.private_subnets
+  private_subnet_ids     = module.vpc.private_subnet_ids
   replication_protection = var.efs_replication_protection
-  vpc_id                 = module.vpc.vpc_id
+  vpc_id                 = module.vpc.id
 }
 
 module "external_dns" {

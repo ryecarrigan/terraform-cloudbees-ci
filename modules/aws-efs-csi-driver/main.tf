@@ -22,6 +22,7 @@ module "service_account_role" {
 module "efs_file_system" {
   source = "../efs-file-system"
 
+  resource_prefix          = var.cluster_name
   private_subnet_ids       = var.private_subnet_ids
   source_security_group_id = var.node_security_group_id
   vpc_id                   = var.vpc_id

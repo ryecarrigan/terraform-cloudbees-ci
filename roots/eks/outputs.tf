@@ -7,7 +7,7 @@ output "cluster_name" {
 }
 
 output "efs_filesystem_id" {
-  value = module.efs_driver.filesystem_id
+  value = module.efs_driver.file_system_id
 }
 
 output "kubeconfig_filename" {

@@ -1,9 +1,9 @@
-output "filesystem_id" {
-  value = aws_efs_file_system.this.id
+output "file_system_id" {
+  value = module.efs_file_system.file_system_id
 }
 
 output "security_group_id" {
-  value = aws_security_group.this.id
+  value = module.efs_file_system.security_group_id
 }
 
 output "storage_class_name" {
