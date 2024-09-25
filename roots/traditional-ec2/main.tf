@@ -10,6 +10,8 @@ locals {
   ami_id             = data.aws_ssm_parameter.this.value
   availability_zones = slice(data.aws_availability_zones.available.names, 0, var.zone_count)
   cluster_name       = "${var.cluster_name}${local.workspace_suffix}"
+  secret_properties  = fileexists(local.secret_props_file) ? file(local.secret_props_file) : ""
+  secret_props_file  = "${path.module}/values/secrets.properties"
   workspace_suffix   = terraform.workspace == "default" ? "" : "-${terraform.workspace}"
 }
 
@@ -37,6 +39,7 @@ module "cjoc" {
   acm_certificate_arn       = module.acm_certificate.certificate_arn
   ami_id                    = local.ami_id
   cluster_security_group_id = aws_security_group.cluster.id
+  domain_name               = var.domain_name
   efs_file_system_id        = module.efs.file_system_id
   efs_iam_policy_arn        = module.efs.iam_policy_arn
   instance_type             = var.instance_type
@@ -44,10 +47,10 @@ module "cjoc" {
   private_subnets           = module.vpc.private_subnet_ids
   public_subnets            = module.vpc.public_subnet_ids
   resource_prefix           = var.cluster_name
+  secret_properties         = local.secret_properties
   ssh_cidr_blocks           = var.ssh_cidr_blocks
-  vpc_id                    = module.vpc.id
-  domain_name               = var.domain_name
   subdomain                 = var.subdomain
+  vpc_id                    = module.vpc.id
 }
 
 module "bastion" {
