@@ -48,6 +48,11 @@ variable "resource_suffix" {
   type    = string
 }
 
+variable "secret_properties" {
+  default = ""
+  type    = string
+}
+
 variable "ssh_cidr_blocks" {
   type = set(string)
 }
