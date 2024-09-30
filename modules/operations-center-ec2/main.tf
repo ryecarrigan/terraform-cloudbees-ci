@@ -1,7 +1,9 @@
 locals {
   template_variables = {
-    access_point_id   = aws_efs_access_point.this.id,
-    file_system_id    = var.efs_file_system_id,
+    access_point_id   = aws_efs_access_point.this.id
+    casc_bundle_path  = replace(var.casc_bundle_path, "/", "\\/")
+    casc_bundle_repo  = var.casc_bundle_repo
+    file_system_id    = var.efs_file_system_id
     secret_properties = indent(6, var.secret_properties)
   }
 }

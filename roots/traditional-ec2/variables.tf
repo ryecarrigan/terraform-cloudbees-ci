@@ -22,6 +22,16 @@ variable "aws_region" {
   type    = string
 }
 
+variable "casc_bundle_path" {
+  default = "traditional"
+  type    = string
+}
+
+variable "casc_bundle_repo" {
+  default = "https://github.com/ryecarrigan/oc-casc-bundle.git"
+  type    = string
+}
+
 variable "cidr_block" {
   default = "10.0.0.0/16"
   type    = string

@@ -18,7 +18,7 @@ runcmd:
   - mkdir -p /var/lib/cloudbees-core-oc
   - mount -t efs -o tls,iam,accesspoint=${access_point_id} ${file_system_id}:/var/lib/cloudbees-core-oc
   - dnf install --assumeyes cloudbees-core-oc
-  - git clone https://github.com/ryecarrigan/oc-casc-bundle.git /var/lib/cloudbees-core-oc/oc-casc-bundle
+  - git clone ${casc_bundle_repo} /var/lib/cloudbees-core-oc/oc-casc-bundle
   - chown -R cloudbees-core-oc:cloudbees-core-oc /var/lib/cloudbees-core-oc/oc-casc-bundle/
-  - sed -i 's/^JENKINS_JAVA_OPTIONS=.*$/JENKINS_JAVA_OPTIONS=\"-Dcore\.casc\.config\.bundle=\/var\/lib\/cloudbees-core-oc\/oc-casc-bundle\/traditional -Djava\.awt\.headless=true\"/' /etc/sysconfig/cloudbees-core-oc
+  - sed -i 's/^JENKINS_JAVA_OPTIONS=.*$/JENKINS_JAVA_OPTIONS=\"-Dcore\.casc\.config\.bundle=\/var\/lib\/cloudbees-core-oc\/oc-casc-bundle\/${casc_bundle_path} -Djava\.awt\.headless=true\"/' /etc/sysconfig/cloudbees-core-oc
   - service cloudbees-core-oc restart
