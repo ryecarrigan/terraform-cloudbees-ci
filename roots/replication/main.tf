@@ -31,12 +31,10 @@ data "aws_s3_bucket" "secondary" {
 }
 
 locals {
-  output_efs_filesystem_id = "efs_filesystem_id"
-  output_velero_bucket     = "velero_bucket"
-  primary_file_system_id   = data.terraform_remote_state.primary.outputs[local.output_efs_filesystem_id]
-  primary_velero_bucket    = data.terraform_remote_state.primary.outputs[local.output_velero_bucket]
-  secondary_file_system_id = data.terraform_remote_state.secondary.outputs[local.output_efs_filesystem_id]
-  secondary_velero_bucket  = data.terraform_remote_state.secondary.outputs[local.output_velero_bucket]
+  primary_file_system_id   = data.terraform_remote_state.primary.outputs["efs_filesystem_id"]
+  primary_velero_bucket    = data.terraform_remote_state.primary.outputs["velero_bucket"]
+  secondary_file_system_id = data.terraform_remote_state.secondary.outputs["efs_filesystem_id"]
+  secondary_velero_bucket  = data.terraform_remote_state.secondary.outputs["velero_bucket"]
 }
 
 

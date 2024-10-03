@@ -1,3 +1,13 @@
+locals {
+  template_variables = {
+    access_point_id   = aws_efs_access_point.this.id
+    casc_bundle_path  = replace(var.casc_bundle_path, "/", "\\/")
+    casc_bundle_repo  = var.casc_bundle_repo
+    file_system_id    = var.efs_file_system_id
+    secret_properties = indent(6, var.secret_properties)
+  }
+}
+
 data "aws_route53_zone" "domain_name" {
   name = var.domain_name
 }
@@ -8,7 +18,7 @@ resource "aws_instance" "this" {
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = coalesce(var.private_subnets...)
-  user_data              = templatefile("${path.module}/user_data.sh.tftpl", {access_point_id: aws_efs_access_point.this.id, file_system_id: var.efs_file_system_id})
+  user_data              = templatefile("${path.module}/user_data.yml.tftpl", local.template_variables)
   vpc_security_group_ids = [aws_security_group.this.id, var.cluster_security_group_id]
 
   tags = {

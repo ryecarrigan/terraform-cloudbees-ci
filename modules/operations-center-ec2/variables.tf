@@ -6,6 +6,14 @@ variable "ami_id" {
   type = string
 }
 
+variable "casc_bundle_path" {
+  type = string
+}
+
+variable "casc_bundle_repo" {
+  type = string
+}
+
 variable "cluster_security_group_id" {
   type = string
 }
@@ -45,6 +53,11 @@ variable "resource_prefix" {
 
 variable "resource_suffix" {
   default = "cjoc"
+  type    = string
+}
+
+variable "secret_properties" {
+  default = ""
   type    = string
 }
 
