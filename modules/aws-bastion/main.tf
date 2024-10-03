@@ -1,9 +1,5 @@
-data "aws_ssm_parameter" "this" {
-  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
-}
-
 resource "aws_instance" "this" {
-  ami                    = data.aws_ssm_parameter.this.value
+  ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = var.subnet_id
@@ -48,11 +44,11 @@ resource "aws_security_group_rule" "ingress" {
 }
 
 resource "aws_security_group_rule" "source" {
-  description              = "SSH ingress from EKS nodes"
+  description              = "SSH ingress from bastion to other nodes"
   from_port                = 22
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.this.id
-  source_security_group_id = var.source_security_group_id
+  security_group_id        = var.source_security_group_id
+  source_security_group_id = aws_security_group.this.id
   to_port                  = 22
   type                     = "ingress"
 }

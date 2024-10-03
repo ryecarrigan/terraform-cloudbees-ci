@@ -1,5 +1,9 @@
+locals {
+  domain_name = length(var.subdomain) > 0 ? "${var.subdomain}.${var.domain_name}" : var.domain_name
+}
+
 resource "aws_acm_certificate" "this" {
-  domain_name       = length(var.subdomain) > 0 ? "${var.subdomain}.${var.domain_name}" : var.domain_name
+  domain_name       = local.domain_name
   validation_method = "DNS"
 
   lifecycle {

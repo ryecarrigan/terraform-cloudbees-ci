@@ -1,7 +1,6 @@
 locals {
   name_prefix     = "${var.cluster_name}_${var.release_name}"
   namespace       = "kube-system"
-  protection      = (var.replication_protection) ? "ENABLED" : "DISABLED"
   role_name       = substr(local.name_prefix, 0, 38)
   service_account = "efs-csi-controller-sa"
 }
@@ -20,55 +19,13 @@ module "service_account_role" {
   }
 }
 
-resource "aws_efs_file_system" "this" {
-  encrypted = var.encrypt_file_system
-  tags = {
-    Name = local.name_prefix
-  }
+module "efs_file_system" {
+  source = "../efs-file-system"
 
-  protection {
-    replication_overwrite = local.protection
-  }
-
-  lifecycle {
-    ignore_changes = [protection]
-  }
-}
-
-resource "aws_efs_mount_target" "this" {
-  count = length(var.private_subnet_ids)
-
-  file_system_id  = aws_efs_file_system.this.id
-  security_groups = [aws_security_group.this.id]
-  subnet_id       = var.private_subnet_ids[count.index]
-}
-
-resource "aws_security_group" "this" {
-  description = "Security group for EFS mount targets in EKS cluster ${var.cluster_name}"
-  name_prefix = local.name_prefix
-  vpc_id      = var.vpc_id
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "aws_security_group_rule" "egress" {
-  from_port                = 2049
-  protocol                 = "tcp"
-  security_group_id        = var.node_security_group_id
-  source_security_group_id = aws_security_group.this.id
-  to_port                  = 2049
-  type                     = "egress"
-}
-
-resource "aws_security_group_rule" "ingress" {
-  from_port                = 2049
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.this.id
+  resource_prefix          = var.cluster_name
+  private_subnet_ids       = var.private_subnet_ids
   source_security_group_id = var.node_security_group_id
-  to_port                  = 2049
-  type                     = "ingress"
+  vpc_id                   = var.vpc_id
 }
 
 resource "aws_eks_addon" "this" {
@@ -88,7 +45,7 @@ resource "kubernetes_storage_class" "this" {
   parameters = {
     directoryPerms        = "700"
     ensureUniqueDirectory = false
-    fileSystemId          = aws_efs_file_system.this.id
+    fileSystemId          = module.efs_file_system.file_system_id
     provisioningMode      = "efs-ap"
     subPathPattern        = "$${.PVC.name}"
     gid                   = var.storage_class_gid
