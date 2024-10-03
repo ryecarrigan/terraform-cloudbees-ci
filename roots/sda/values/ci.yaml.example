@@ -17,7 +17,7 @@ OperationsCenter:
       ocBundleAutomaticVersion: true
       scmRepo: https://github.com/ryecarrigan/oc-casc-bundle.git
       scmBranch: main
-      scmBundlePath: /cjoc
+      scmBundlePath: /modern
 
   NodeSelector:
     jenkins: controller
