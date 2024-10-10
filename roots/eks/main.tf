@@ -172,7 +172,7 @@ module "eks" {
     max_size     = var.node_group_max
     desired_size = (var.node_group_desired < 0) ? 0 : var.node_group_desired
 
-    ami_type              = "AL2_x86_64"
+    ami_type              = "AL2023_x86_64_STANDARD"
     capacity_type         = "SPOT"
     create_iam_role       = true
     create_security_group = false
