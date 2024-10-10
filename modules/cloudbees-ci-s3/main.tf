@@ -66,10 +66,12 @@ EOF
 }
 
 data "aws_iam_role" "this" {
-  name = var.iam_role
+  for_each = var.iam_roles
+  name     = each.value
 }
 
 resource "aws_iam_role_policy_attachment" "this" {
+  for_each   = data.aws_iam_role.this
   policy_arn = aws_iam_policy.this.arn
-  role       = data.aws_iam_role.this.name
+  role       = each.value.name
 }

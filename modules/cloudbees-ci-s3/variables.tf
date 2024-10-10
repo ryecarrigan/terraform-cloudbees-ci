@@ -7,6 +7,6 @@ variable "bucket_suffix" {
   type    = string
 }
 
-variable "iam_role" {
-  type = string
+variable "iam_roles" {
+  type = set(string)
 }

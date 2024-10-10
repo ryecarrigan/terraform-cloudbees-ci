@@ -53,6 +53,7 @@ locals {
 
   agents_role_name      = substr("${local.cluster_name}-agents", 0, 38)
   controllers_role_name = substr("${local.cluster_name}-controllers", 0, 38)
+  default_role_name     = substr(local.cluster_name, 0, 38)
 
   vpc_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
@@ -150,7 +151,7 @@ module "eks" {
   eks_managed_node_groups = {
     (local.cluster_name) = {
       desired_size  = 1
-      iam_role_name = substr(local.cluster_name, 0, 38)
+      iam_role_name = local.default_role_name
       min_size      = 1
     }
 
@@ -245,7 +246,7 @@ module "ci_cache" {
   source     = "../../modules/cloudbees-ci-s3"
 
   bucket_prefix = var.cluster_name
-  iam_role      = local.controllers_role_name
+  iam_roles     = [local.controllers_role_name, local.default_role_name]
 }
 
 
