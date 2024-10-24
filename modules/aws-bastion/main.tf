@@ -52,3 +52,13 @@ resource "aws_security_group_rule" "source" {
   to_port                  = 22
   type                     = "ingress"
 }
+
+resource "aws_security_group_rule" "dest" {
+  description              = "SSH ingress from other nodes to bastion"
+  from_port                = 22
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.this.id
+  source_security_group_id = var.source_security_group_id
+  to_port                  = 22
+  type                     = "ingress"
+}
