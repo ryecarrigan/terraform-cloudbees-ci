@@ -21,7 +21,6 @@ provider "helm" {
 }
 
 data "aws_caller_identity" "current" {}
-data "aws_availability_zones" "available" {}
 
 data "aws_eks_cluster_auth" "auth" {
   name = module.eks.cluster_name
@@ -38,7 +37,6 @@ data "aws_ssm_parameter" "this" {
 }
 
 locals {
-  availability_zones     = slice(data.aws_availability_zones.available.names, 0, var.zone_count)
   aws_account_id         = data.aws_caller_identity.current.account_id
   aws_region             = data.aws_region.current.name
   cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
@@ -175,7 +173,7 @@ module "eks" {
     max_size     = var.node_group_max
     desired_size = (var.node_group_desired < 0) ? 0 : var.node_group_desired
 
-    ami_type              = "AL2_x86_64"
+    ami_type              = "AL2023_x86_64_STANDARD"
     capacity_type         = "SPOT"
     create_iam_role       = true
     create_security_group = false

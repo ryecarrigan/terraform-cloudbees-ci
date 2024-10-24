@@ -19,7 +19,7 @@ replication-timestamp:
 
 post-eks:
 	aws eks update-kubeconfig --name `terraform -chdir=roots/eks output -raw cluster_name`
-	kubectl annotate --overwrite storageclass `kubectl get storageclass -o json | jq -r '.items[].metadata | select(.annotations."storageclass.kubernetes.io/is-default-class"=="true") | .name'` storageclass.kubernetes.io/is-default-class=false
+	for name in `kubectl get storageclass -o json | jq -r '.items[].metadata | select(.annotations."storageclass.kubernetes.io/is-default-class"=="true") | .name'`; do kubectl annotate --overwrite storageclass $$name storageclass.kubernetes.io/is-default-class=false; done
 	kubectl annotate --overwrite storageclass `terraform -chdir=roots/eks output -raw storage_class_name` storageclass.kubernetes.io/is-default-class=true
 
 

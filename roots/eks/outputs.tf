@@ -14,6 +14,10 @@ output "kubeconfig_filename" {
   value = local.kubeconfig_file
 }
 
+output "nat_public_ip" {
+  value = module.vpc.nat_public_ip
+}
+
 output "storage_class_name" {
   value = module.efs_driver.storage_class_name
 }
