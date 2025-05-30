@@ -1,12 +1,16 @@
-variable "bucket_prefix" {
+variable "bucket_name" {
   type = string
 }
 
-variable "bucket_suffix" {
-  default = "cbci-cache"
-  type    = string
+variable "cluster_name" {
+  type = string
 }
 
-variable "iam_roles" {
-  type = set(string)
+variable "namespace" {
+  type = string
+}
+
+variable "service_account_name" {
+  default = "pluggable-storage-service"
+  type    = string
 }
