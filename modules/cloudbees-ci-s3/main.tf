@@ -1,12 +1,8 @@
-locals {
-  name = "${var.bucket_prefix}-${var.bucket_suffix}"
-}
-
 module "aws_s3_backups" {
   source   = "terraform-aws-modules/s3-bucket/aws"
   version  = "4.1.2"
 
-  bucket = local.name
+  bucket = var.bucket_name
 
   force_destroy = true
 
@@ -38,7 +34,7 @@ module "aws_s3_backups" {
 }
 
 resource "aws_iam_policy" "this" {
-  name   = local.name
+  name   = var.bucket_name
   policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -65,13 +61,36 @@ resource "aws_iam_policy" "this" {
 EOF
 }
 
-data "aws_iam_role" "this" {
-  for_each = var.iam_roles
-  name     = each.value
+resource "aws_iam_role" "this" {
+  name = var.bucket_name
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "pods.eks.amazonaws.com"
+            },
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
+        }
+    ]
+}
+EOF
 }
 
 resource "aws_iam_role_policy_attachment" "this" {
-  for_each   = data.aws_iam_role.this
   policy_arn = aws_iam_policy.this.arn
-  role       = each.value.name
+  role       = aws_iam_role.this.name
+}
+
+resource "aws_eks_pod_identity_association" "this" {
+  cluster_name    = var.cluster_name
+  namespace       = var.namespace
+  role_arn        = aws_iam_role.this.arn
+  service_account = var.service_account_name
 }

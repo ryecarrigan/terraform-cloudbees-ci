@@ -18,6 +18,11 @@ variable "bastion_enabled" {
   type    = bool
 }
 
+variable "ci_namespace" {
+  default = "cloudbees-ci"
+  type    = string
+}
+
 variable "cidr_block" {
   default = "10.0.0.0/16"
   type    = string

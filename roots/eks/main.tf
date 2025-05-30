@@ -227,7 +227,7 @@ module "eks" {
 
 
 ################################################################################
-# Amazon Certificate Manager certificate(s)
+# AWS resources
 ################################################################################
 
 module "acm_certificate" {
@@ -238,13 +238,14 @@ module "acm_certificate" {
   subdomain   = "*"
 }
 
-module "ci_cache" {
+module "pluggable_storage" {
   depends_on = [module.eks]
   for_each   = var.create_s3_bucket ? local.this : []
   source     = "../../modules/cloudbees-ci-s3"
 
-  bucket_prefix = var.cluster_name
-  iam_roles     = [local.controllers_role_name, local.default_role_name]
+  bucket_name  = "${var.cluster_name}-storage"
+  cluster_name = var.cluster_name
+  namespace    = var.ci_namespace
 }
 
 
