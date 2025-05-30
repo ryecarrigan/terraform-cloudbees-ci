@@ -34,7 +34,7 @@ variable "cidr_block" {
 }
 
 variable "cluster_autoscaler_tag" {
-  default = "v1.30.2"
+  default = "v1.32.1"
   type    = string
 }
 
@@ -69,7 +69,7 @@ variable "install_prometheus" {
 }
 
 variable "instance_types" {
-  default = ["m7a.xlarge", "m6a.xlarge", "m5a.xlarge"]
+  default = ["m5.xlarge", "m5a.xlarge", "m6a.xlarge", "m7a.xlarge"]
   type    = set(string)
 }
 
@@ -84,7 +84,7 @@ variable "kubeconfig_file" {
 }
 
 variable "kubernetes_version" {
-  default = "1.30"
+  default = "1.32"
   type    = string
 }
 
