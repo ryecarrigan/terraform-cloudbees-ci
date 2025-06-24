@@ -39,6 +39,7 @@ data "aws_ssm_parameter" "this" {
 locals {
   aws_account_id         = data.aws_caller_identity.current.account_id
   aws_region             = data.aws_region.current.name
+  capacity_type          = var.use_spot_instances ? "SPOT" : "ON_DEMAND"
   cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
   cluster_endpoint       = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
@@ -174,7 +175,7 @@ module "eks" {
     desired_size = (var.node_group_desired < 0) ? 0 : var.node_group_desired
 
     ami_type              = "AL2023_x86_64_STANDARD"
-    capacity_type         = "SPOT"
+    capacity_type         = local.capacity_type
     create_iam_role       = true
     create_security_group = false
     iam_role_use_name_prefix = false

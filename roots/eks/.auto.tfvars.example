@@ -21,4 +21,5 @@ ssh_cidr_blocks = # Plan will reject if any invalid CIDRs are provided
 #single_node_group_per_az = # Defaults to true
 #storage_class_uid = # Defaults to 1000
 #tags = # Defaults to empty map
+#use_spot_instances = # Defaults to false
 #zone_count = # Defaults to 3

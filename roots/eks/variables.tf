@@ -127,6 +127,11 @@ variable "tags" {
   type    = map(string)
 }
 
+variable "use_spot_instances" {
+  default = false
+  type    = bool
+}
+
 variable "zone_count" {
   default = 3
   type    = number
