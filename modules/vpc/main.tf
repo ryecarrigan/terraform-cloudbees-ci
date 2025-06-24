@@ -1,5 +1,8 @@
 locals {
-  availability_zones = slice(data.aws_availability_zones.available.names, 0, var.zone_count)
+  availability_zones = slice(local.az_names, 0, local.zone_count)
+  az_count           = length(local.az_names)
+  az_names           = data.aws_availability_zones.available.names
+  zone_count         = var.zone_count <= local.az_count ? var.zone_count : local.az_count
 }
 
 data "aws_availability_zones" "available" {}

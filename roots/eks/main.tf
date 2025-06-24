@@ -101,6 +101,7 @@ module "vpc" {
 
   resource_prefix = var.cluster_name
   vpc_tags        = local.vpc_tags
+  zone_count      = var.zone_count
 }
 
 module "bastion" {
