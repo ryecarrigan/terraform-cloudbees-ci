@@ -1,3 +1,7 @@
+output "autoscaling_group_names" {
+  value = concat(module.eks.eks_managed_node_groups_autoscaling_group_names, module.eks.self_managed_node_groups_autoscaling_group_names)
+}
+
 output "bastion_eip" {
   value = var.bastion_enabled ? module.bastion["this"].bastion_eip : ""
 }

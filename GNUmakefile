@@ -37,3 +37,11 @@ up:
 down:
 	make sda ACTION="destroy -auto-approve"
 	make eks ACTION="destroy -auto-approve"
+
+
+in:
+	for name in `terraform -chdir=roots/eks output -json autoscaling_group_names | jq -r '. | flatten[]'`; do aws autoscaling update-auto-scaling-group --auto-scaling-group-name $$name --min-size 0 --desired-capacity 0; done
+
+
+out:
+	for name in `terraform -chdir=roots/eks output -json autoscaling_group_names | jq -r '. | flatten[]'`; do aws autoscaling update-auto-scaling-group --auto-scaling-group-name $$name --min-size 1 --desired-capacity 1; done
