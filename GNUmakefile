@@ -5,7 +5,7 @@ eks:
 	terraform -chdir=roots/eks $(ACTION)
 
 
-sda:
+ci sda:
 	terraform -chdir=roots/sda $(ACTION)
 
 
@@ -40,8 +40,8 @@ down:
 
 
 in:
-	for name in `terraform -chdir=roots/eks output -json autoscaling_group_names | jq -r '. | flatten[]'`; do aws autoscaling update-auto-scaling-group --auto-scaling-group-name $$name --min-size 0 --desired-capacity 0; done
+	for name in `terraform -chdir=roots/eks output -json autoscaling_group_names | jq -r '. | flatten[]'`; do aws autoscaling update-auto-scaling-group --auto-scaling-group-name $$name --min-size 0 --desired-capacity 0; echo "Scaled in: $$name"; done
 
 
 out:
-	for name in `terraform -chdir=roots/eks output -json autoscaling_group_names | jq -r '. | flatten[]'`; do aws autoscaling update-auto-scaling-group --auto-scaling-group-name $$name --min-size 1 --desired-capacity 1; done
+	for name in `terraform -chdir=roots/eks output -json autoscaling_group_names | jq -r '. | flatten[]'`; do aws autoscaling update-auto-scaling-group --auto-scaling-group-name $$name --min-size 1 --desired-capacity 1; echo "Scaled out: $$name"; done
