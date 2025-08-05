@@ -1,3 +1,8 @@
+variable "aws_profile" {
+  default = ""
+  type    = string
+}
+
 variable "name_prefix" {
   type = string
 }
@@ -26,7 +31,7 @@ variable "remote_state_config" {
 }
 
 variable "secondary_region" {
-  default = "us-east-1"
+  default = "us-west-1"
   type    = string
 }
 
