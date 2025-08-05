@@ -51,9 +51,12 @@ locals {
   this                   = toset(["this"])
   workspace_suffix       = terraform.workspace == "default" ? "" : "-${terraform.workspace}"
 
-  agents_role_name      = substr("${local.cluster_name}-agents", 0, 38)
-  controllers_role_name = substr("${local.cluster_name}-controllers", 0, 38)
-  default_role_name     = substr(local.cluster_name, 0, 38)
+  agents_group_name      = "${substr(local.cluster_name, 0, 29)}_agents"
+  agents_role_name       = substr("${local.cluster_name}-agents", 0, 38)
+  controllers_group_name = "${substr(local.cluster_name, 0, 24)}_controllers"
+  controllers_role_name  = substr("${local.cluster_name}-controllers", 0, 38)
+  default_group_name     = local.default_role_name
+  default_role_name      = substr(local.cluster_name, 0, 38)
 
   vpc_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
@@ -150,20 +153,20 @@ module "eks" {
   }
 
   eks_managed_node_groups = {
-    (local.cluster_name) = {
+    (local.default_group_name) = {
       desired_size  = 1
       iam_role_name = local.default_role_name
       min_size      = 1
     }
 
-    "${local.cluster_name}_controllers" = {
+    (local.controllers_group_name) = {
       iam_role_name = local.controllers_role_name
       labels = {
         "jenkins" = "controller"
       }
     }
 
-    "${local.cluster_name}_agents" = {
+    (local.agents_group_name) = {
       iam_role_name = local.agents_role_name
       labels = {
         "jenkins" = "agent"
