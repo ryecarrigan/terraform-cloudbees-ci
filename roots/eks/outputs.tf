@@ -14,10 +14,6 @@ output "efs_filesystem_id" {
   value = module.efs_driver.file_system_id
 }
 
-output "kubeconfig_filename" {
-  value = local.kubeconfig_file
-}
-
 output "nat_public_ip" {
   value = module.vpc.nat_public_ip
 }

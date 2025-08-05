@@ -48,11 +48,6 @@ variable "create_acm_certificate" {
   type    = bool
 }
 
-variable "create_kubeconfig_file" {
-  default = true
-  type    = bool
-}
-
 variable "create_s3_bucket" {
   default = false
   type    = bool
