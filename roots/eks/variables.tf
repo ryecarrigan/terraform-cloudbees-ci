@@ -8,6 +8,11 @@ variable "domain_name" {
 }
 
 # Optional variables
+variable "aws_profile" {
+  default = ""
+  type    = string
+}
+
 variable "aws_region" {
   default = "us-east-1"
   type    = string
@@ -16,6 +21,11 @@ variable "aws_region" {
 variable "bastion_enabled" {
   default = false
   type    = bool
+}
+
+variable "ci_namespace" {
+  default = "cloudbees-ci"
+  type    = string
 }
 
 variable "cidr_block" {
@@ -29,7 +39,7 @@ variable "cidr_block" {
 }
 
 variable "cluster_autoscaler_tag" {
-  default = "v1.30.2"
+  default = "v1.33.0"
   type    = string
 }
 
@@ -38,12 +48,17 @@ variable "create_acm_certificate" {
   type    = bool
 }
 
-variable "create_kubeconfig_file" {
-  default = true
+variable "create_s3_bucket" {
+  default = false
   type    = bool
 }
 
 variable "efs_replication_protection" {
+  default = true
+  type    = bool
+}
+
+variable "ensure_unique_directory" {
   default = true
   type    = bool
 }
@@ -59,7 +74,7 @@ variable "install_prometheus" {
 }
 
 variable "instance_types" {
-  default = ["m7a.xlarge", "m6a.xlarge", "m5a.xlarge"]
+  default = ["m5.xlarge", "m5a.xlarge", "m6a.xlarge", "m7a.xlarge"]
   type    = set(string)
 }
 
@@ -68,13 +83,8 @@ variable "key_name" {
   type    = string
 }
 
-variable "kubeconfig_file" {
-  default = "eks_kubeconfig"
-  type    = string
-}
-
 variable "kubernetes_version" {
-  default = "1.30"
+  default = "1.33"
   type    = string
 }
 
@@ -91,6 +101,11 @@ variable "node_group_max" {
 variable "node_group_min" {
   default = 1
   type    = number
+}
+
+variable "reuse_access_point" {
+  default = false
+  type    = bool
 }
 
 variable "single_node_group_per_az" {
@@ -115,6 +130,11 @@ variable "storage_class_uid" {
 variable "tags" {
   default = {}
   type    = map(string)
+}
+
+variable "use_spot_instances" {
+  default = false
+  type    = bool
 }
 
 variable "zone_count" {

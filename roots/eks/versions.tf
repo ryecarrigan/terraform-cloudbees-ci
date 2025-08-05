@@ -3,15 +3,15 @@ terraform {
 
   required_providers {
     aws = {
-      version = ">= 4.8.0"
+      version = ">= 5.99.0, <6.0.0"
     }
 
     helm = {
-      version = ">= 2.5.0"
+      version = ">= 2.17.0, <3.0.0"
     }
 
     kubernetes = {
-      version = ">= 2.10.0"
+      version = ">= 2.37.0"
     }
   }
 }

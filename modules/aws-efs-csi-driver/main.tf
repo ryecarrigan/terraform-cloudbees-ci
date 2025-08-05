@@ -44,10 +44,11 @@ resource "kubernetes_storage_class" "this" {
 
   parameters = {
     directoryPerms        = "700"
-    ensureUniqueDirectory = false
+    ensureUniqueDirectory = var.ensure_unique_directory
     fileSystemId          = module.efs_file_system.file_system_id
     provisioningMode      = "efs-ap"
-    subPathPattern        = "$${.PVC.name}"
+    reuseAccessPoint      = var.reuse_access_point
+    subPathPattern        = var.sub_path_pattern
     gid                   = var.storage_class_gid
     uid                   = var.storage_class_uid
   }

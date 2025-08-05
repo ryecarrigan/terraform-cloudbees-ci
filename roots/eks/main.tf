@@ -1,5 +1,6 @@
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = var.aws_profile
 
   default_tags {
     tags = var.tags
@@ -39,18 +40,22 @@ data "aws_ssm_parameter" "this" {
 locals {
   aws_account_id         = data.aws_caller_identity.current.account_id
   aws_region             = data.aws_region.current.name
+  capacity_type          = var.use_spot_instances ? "SPOT" : "ON_DEMAND"
   cluster_auth_token     = data.aws_eks_cluster_auth.auth.token
   cluster_endpoint       = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   cluster_name           = "${var.cluster_name}${local.workspace_suffix}"
   ingress_class_name     = "alb"
-  kubeconfig_file        = "${path.cwd}/${var.kubeconfig_file}"
   oidc_provider_arn      = module.eks.oidc_provider_arn
   this                   = toset(["this"])
   workspace_suffix       = terraform.workspace == "default" ? "" : "-${terraform.workspace}"
 
-  agents_role_name      = substr("${local.cluster_name}-agents", 0, 38)
-  controllers_role_name = substr("${local.cluster_name}-controllers", 0, 38)
+  agents_group_name      = "${substr(local.cluster_name, 0, 29)}_agents"
+  agents_role_name       = substr("${local.cluster_name}-agents", 0, 38)
+  controllers_group_name = "${substr(local.cluster_name, 0, 24)}_controllers"
+  controllers_role_name  = substr("${local.cluster_name}-controllers", 0, 38)
+  default_group_name     = local.default_role_name
+  default_role_name      = substr(local.cluster_name, 0, 38)
 
   vpc_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
@@ -99,6 +104,7 @@ module "vpc" {
 
   resource_prefix = var.cluster_name
   vpc_tags        = local.vpc_tags
+  zone_count      = var.zone_count
 }
 
 module "bastion" {
@@ -122,7 +128,7 @@ module "bastion" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "20.22.0"
+  version = "20.36.0"
 
   cluster_name    = local.cluster_name
   cluster_version = var.kubernetes_version
@@ -146,20 +152,20 @@ module "eks" {
   }
 
   eks_managed_node_groups = {
-    (local.cluster_name) = {
+    (local.default_group_name) = {
       desired_size  = 1
-      iam_role_name = substr(local.cluster_name, 0, 38)
+      iam_role_name = local.default_role_name
       min_size      = 1
     }
 
-    "${local.cluster_name}_controllers" = {
+    (local.controllers_group_name) = {
       iam_role_name = local.controllers_role_name
       labels = {
         "jenkins" = "controller"
       }
     }
 
-    "${local.cluster_name}_agents" = {
+    (local.agents_group_name) = {
       iam_role_name = local.agents_role_name
       labels = {
         "jenkins" = "agent"
@@ -173,7 +179,7 @@ module "eks" {
     desired_size = (var.node_group_desired < 0) ? 0 : var.node_group_desired
 
     ami_type              = "AL2023_x86_64_STANDARD"
-    capacity_type         = "SPOT"
+    capacity_type         = local.capacity_type
     create_iam_role       = true
     create_security_group = false
     iam_role_use_name_prefix = false
@@ -226,7 +232,7 @@ module "eks" {
 
 
 ################################################################################
-# Amazon Certificate Manager certificate(s)
+# AWS resources
 ################################################################################
 
 module "acm_certificate" {
@@ -235,6 +241,16 @@ module "acm_certificate" {
 
   domain_name = var.domain_name
   subdomain   = "*"
+}
+
+module "pluggable_storage" {
+  depends_on = [module.eks]
+  for_each   = var.create_s3_bucket ? local.this : []
+  source     = "../../modules/cloudbees-ci-s3"
+
+  bucket_name  = "${var.cluster_name}-storage"
+  cluster_name = var.cluster_name
+  namespace    = var.ci_namespace
 }
 
 
@@ -273,12 +289,13 @@ module "efs_driver" {
   depends_on = [module.aws_load_balancer_controller]
   source     = "../../modules/aws-efs-csi-driver"
 
-  cluster_name           = local.cluster_name
-  node_security_group_id = module.eks.node_security_group_id
-  oidc_arn               = local.oidc_provider_arn
-  private_subnet_ids     = module.vpc.private_subnet_ids
-  replication_protection = var.efs_replication_protection
-  vpc_id                 = module.vpc.id
+  cluster_name            = local.cluster_name
+  ensure_unique_directory = var.ensure_unique_directory
+  node_security_group_id  = module.eks.node_security_group_id
+  oidc_arn                = local.oidc_provider_arn
+  private_subnet_ids      = module.vpc.private_subnet_ids
+  sub_path_pattern        = "$${.PVC.name}"
+  vpc_id                  = module.vpc.id
 }
 
 module "external_dns" {

@@ -2,14 +2,9 @@ variable "cluster_name" {
   type = string
 }
 
-variable "encrypt_file_system" {
+variable "ensure_unique_directory" {
   default = true
   type    = bool
-}
-
-variable "kms_key_id" {
-  default = null
-  type    = string
 }
 
 variable "node_security_group_id" {
@@ -30,8 +25,8 @@ variable "release_name" {
   type    = string
 }
 
-variable "replication_protection" {
-  default = true
+variable "reuse_access_point" {
+  default = false
   type    = bool
 }
 
@@ -47,6 +42,11 @@ variable "storage_class_gid" {
 
 variable "storage_class_uid" {
   default = "1000"
+  type    = string
+}
+
+variable "sub_path_pattern" {
+  default = "$${.PV.name}"
   type    = string
 }
 

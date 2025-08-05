@@ -1,5 +1,8 @@
 locals {
-  availability_zones = slice(data.aws_availability_zones.available.names, 0, var.zone_count)
+  availability_zones = slice(local.az_names, 0, local.zone_count)
+  az_count           = length(local.az_names)
+  az_names           = data.aws_availability_zones.available.names
+  zone_count         = var.zone_count <= local.az_count ? var.zone_count : local.az_count
 }
 
 data "aws_availability_zones" "available" {}
@@ -7,6 +10,15 @@ data "aws_availability_zones" "available" {}
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.13.0"
+
+  # VPC flow logs
+  create_flow_log_cloudwatch_iam_role             = true
+  create_flow_log_cloudwatch_log_group            = true
+  enable_flow_log                                 = true
+  flow_log_cloudwatch_log_group_name_suffix       = true
+  flow_log_cloudwatch_log_group_retention_in_days = 7
+  vpc_flow_log_iam_policy_name                    = "${var.resource_prefix}_flow-logs"
+  vpc_flow_log_iam_role_name                      = "${var.resource_prefix}_flow-logs"
 
   name                       = "${var.resource_prefix}_vpc"
   azs                        = local.availability_zones
