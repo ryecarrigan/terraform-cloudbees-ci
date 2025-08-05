@@ -83,11 +83,6 @@ variable "key_name" {
   type    = string
 }
 
-variable "kubeconfig_file" {
-  default = "eks_kubeconfig"
-  type    = string
-}
-
 variable "kubernetes_version" {
   default = "1.32"
   type    = string
