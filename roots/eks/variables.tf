@@ -39,7 +39,7 @@ variable "cidr_block" {
 }
 
 variable "cluster_autoscaler_tag" {
-  default = "v1.32.1"
+  default = "v1.33.0"
   type    = string
 }
 
@@ -84,7 +84,7 @@ variable "key_name" {
 }
 
 variable "kubernetes_version" {
-  default = "1.32"
+  default = "1.33"
   type    = string
 }
 
