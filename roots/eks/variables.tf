@@ -58,6 +58,11 @@ variable "efs_replication_protection" {
   type    = bool
 }
 
+variable "ensure_unique_directory" {
+  default = true
+  type    = bool
+}
+
 variable "grafana_subdomain" {
   default = "grafana"
   type    = string
@@ -101,6 +106,11 @@ variable "node_group_max" {
 variable "node_group_min" {
   default = 1
   type    = number
+}
+
+variable "reuse_access_point" {
+  default = false
+  type    = bool
 }
 
 variable "single_node_group_per_az" {

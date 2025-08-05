@@ -286,12 +286,13 @@ module "efs_driver" {
   depends_on = [module.aws_load_balancer_controller]
   source     = "../../modules/aws-efs-csi-driver"
 
-  cluster_name           = local.cluster_name
-  node_security_group_id = module.eks.node_security_group_id
-  oidc_arn               = local.oidc_provider_arn
-  private_subnet_ids     = module.vpc.private_subnet_ids
-  replication_protection = var.efs_replication_protection
-  vpc_id                 = module.vpc.id
+  cluster_name            = local.cluster_name
+  ensure_unique_directory = var.ensure_unique_directory
+  node_security_group_id  = module.eks.node_security_group_id
+  oidc_arn                = local.oidc_provider_arn
+  private_subnet_ids      = module.vpc.private_subnet_ids
+  sub_path_pattern        = "$${.PVC.name}"
+  vpc_id                  = module.vpc.id
 }
 
 module "external_dns" {
