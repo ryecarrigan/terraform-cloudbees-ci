@@ -9,11 +9,6 @@ variable "tags" {
   type    = map(string)
 }
 
-variable "update_kubeconfig" {
-  default = true
-  type    = bool
-}
-
 
 # Options for installing and configuring CloudBees CI
 variable "install_ci" {
