@@ -46,7 +46,6 @@ locals {
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   cluster_name           = "${var.cluster_name}${local.workspace_suffix}"
   ingress_class_name     = "alb"
-  kubeconfig_file        = "${path.cwd}/${var.kubeconfig_file}"
   oidc_provider_arn      = module.eks.oidc_provider_arn
   this                   = toset(["this"])
   workspace_suffix       = terraform.workspace == "default" ? "" : "-${terraform.workspace}"
