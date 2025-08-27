@@ -39,8 +39,9 @@ resource "kubernetes_storage_class" "this" {
     name = var.storage_class_name
   }
 
-  storage_provisioner    = "efs.csi.aws.com"
-  volume_binding_mode    = "Immediate"
+  reclaim_policy      = "Delete"
+  storage_provisioner = "efs.csi.aws.com"
+  volume_binding_mode = "Immediate"
 
   parameters = {
     directoryPerms        = "700"
