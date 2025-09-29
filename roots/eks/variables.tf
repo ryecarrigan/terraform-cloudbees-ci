@@ -73,6 +73,11 @@ variable "install_prometheus" {
   type    = bool
 }
 
+variable "install_velero" {
+  default = false
+  type    = bool
+}
+
 variable "instance_types" {
   default = ["m5.xlarge", "m5a.xlarge", "m6a.xlarge", "m7a.xlarge"]
   type    = set(string)

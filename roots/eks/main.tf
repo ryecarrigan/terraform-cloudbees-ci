@@ -351,6 +351,7 @@ module "cluster_metrics" {
 
 module "velero" {
   depends_on = [null_resource.eks_ready]
+  for_each   = var.install_velero ? local.this : []
   source     = "../../modules/velero-aws"
 
   cluster_name = local.cluster_name
