@@ -7,7 +7,8 @@ locals {
 }
 
 module "service_account_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "5.60.0"
 
   attach_ebs_csi_policy = true
   role_name_prefix      = local.role_name

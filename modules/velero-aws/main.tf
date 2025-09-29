@@ -40,6 +40,7 @@ module "aws_s3_backups" {
 
 module "service_account_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "5.28.0"
 
   attach_velero_policy  = true
   role_name_prefix      = local.role_name
