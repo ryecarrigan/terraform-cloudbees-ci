@@ -4,7 +4,7 @@ module "aws_s3_backups" {
 
   bucket = var.bucket_name
 
-  force_destroy = true
+  force_destroy = var.force_destroy
 
   attach_deny_insecure_transport_policy = true
   attach_require_latest_tls_policy      = true
@@ -20,6 +20,7 @@ module "aws_s3_backups" {
   object_ownership         = "BucketOwnerPreferred"
 
   versioning = {
+    enabled    = false
     status     = false
     mfa_delete = false
   }
@@ -88,7 +89,16 @@ resource "aws_iam_role_policy_attachment" "this" {
   role       = aws_iam_role.this.name
 }
 
+resource "aws_iam_role_policy_attachment" "instance" {
+  count = length(var.instance_role_name) > 0 ? 1 : 0
+
+  policy_arn = aws_iam_policy.this.arn
+  role       = var.instance_role_name
+}
+
 resource "aws_eks_pod_identity_association" "this" {
+  count = length(var.service_account_name) > 0 ? 1 : 0
+
   cluster_name    = var.cluster_name
   namespace       = var.namespace
   role_arn        = aws_iam_role.this.arn

@@ -270,12 +270,24 @@ module "acm_certificate" {
 
 module "pluggable_storage" {
   depends_on = [module.eks]
-  for_each   = var.create_s3_bucket ? local.this : []
+  for_each   = var.create_pluggable_storage_bucket ? local.this : []
   source     = "../../modules/cloudbees-ci-s3"
 
-  bucket_name  = "${var.cluster_name}-storage"
-  cluster_name = var.cluster_name
-  namespace    = var.ci_namespace
+  bucket_name          = "${var.cluster_name}-pluggable-storage"
+  cluster_name         = var.cluster_name
+  namespace            = var.ci_namespace
+  service_account_name = "pluggable-storage-service"
+}
+
+module "workspace_caching" {
+  depends_on = [module.eks]
+  for_each   = var.create_workspace_caching_bucket ? local.this : []
+  source     = "../../modules/cloudbees-ci-s3"
+
+  bucket_name          = "${var.cluster_name}-workspace-cache"
+  cluster_name         = var.cluster_name
+  instance_role_name   = local.controllers_role_name
+  namespace            = var.ci_namespace
 }
 
 
