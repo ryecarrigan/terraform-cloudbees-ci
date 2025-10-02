@@ -230,6 +230,31 @@ module "eks" {
   }
 }
 
+data "http" "eks" {
+  depends_on  = [module.eks.eks_managed_node_groups_autoscaling_group_names]
+  ca_cert_pem = local.cluster_ca_certificate
+  url         = local.cluster_endpoint
+
+  request_headers = {
+    Authorization = "Bearer ${local.cluster_auth_token}"
+  }
+
+  retry {
+    attempts     = 10
+    max_delay_ms = 1000
+    min_delay_ms = 500
+  }
+}
+
+resource "time_sleep" "sleep" {
+  depends_on = [data.http.eks]
+  create_duration = "30s"
+}
+
+resource "null_resource" "eks_ready" {
+  depends_on = [time_sleep.sleep]
+}
+
 
 ################################################################################
 # AWS resources
@@ -245,12 +270,24 @@ module "acm_certificate" {
 
 module "pluggable_storage" {
   depends_on = [module.eks]
-  for_each   = var.create_s3_bucket ? local.this : []
+  for_each   = var.create_pluggable_storage_bucket ? local.this : []
   source     = "../../modules/cloudbees-ci-s3"
 
-  bucket_name  = "${var.cluster_name}-storage"
-  cluster_name = var.cluster_name
-  namespace    = var.ci_namespace
+  bucket_name          = "${var.cluster_name}-pluggable-storage"
+  cluster_name         = var.cluster_name
+  namespace            = var.ci_namespace
+  service_account_name = "pluggable-storage-service"
+}
+
+module "workspace_caching" {
+  depends_on = [module.eks]
+  for_each   = var.create_workspace_caching_bucket ? local.this : []
+  source     = "../../modules/cloudbees-ci-s3"
+
+  bucket_name          = "${var.cluster_name}-workspace-cache"
+  cluster_name         = var.cluster_name
+  instance_role_name   = local.controllers_role_name
+  namespace            = var.ci_namespace
 }
 
 
@@ -259,7 +296,7 @@ module "pluggable_storage" {
 ################################################################################
 
 module "aws_load_balancer_controller" {
-  depends_on = [module.eks, module.acm_certificate]
+  depends_on = [null_resource.eks_ready, module.acm_certificate]
   source     = "../../modules/aws-load-balancer-controller"
 
   cluster_name = local.cluster_name
@@ -267,7 +304,7 @@ module "aws_load_balancer_controller" {
 }
 
 module "cluster_autoscaler" {
-  depends_on = [module.eks]
+  depends_on = [null_resource.eks_ready]
   source     = "../../modules/cluster-autoscaler-eks"
 
   aws_region   = local.aws_region
@@ -277,7 +314,7 @@ module "cluster_autoscaler" {
 }
 
 module "ebs_driver" {
-  depends_on = [module.aws_load_balancer_controller]
+  depends_on = [null_resource.eks_ready]
   source     = "../../modules/aws-ebs-csi-driver"
 
   cluster_name = local.cluster_name
@@ -286,7 +323,7 @@ module "ebs_driver" {
 }
 
 module "efs_driver" {
-  depends_on = [module.aws_load_balancer_controller]
+  depends_on = [null_resource.eks_ready]
   source     = "../../modules/aws-efs-csi-driver"
 
   cluster_name            = local.cluster_name
@@ -299,7 +336,7 @@ module "efs_driver" {
 }
 
 module "external_dns" {
-  depends_on = [module.aws_load_balancer_controller]
+  depends_on = [null_resource.eks_ready]
   source     = "../../modules/external-dns-eks"
 
   aws_account_id  = local.aws_account_id
@@ -309,7 +346,7 @@ module "external_dns" {
 }
 
 module "prometheus" {
-  depends_on = [module.aws_load_balancer_controller]
+  depends_on = [null_resource.eks_ready]
   for_each   = var.install_prometheus ? local.this : []
   source     = "../../modules/prometheus"
 
@@ -320,12 +357,13 @@ module "prometheus" {
 }
 
 module "cluster_metrics" {
-  depends_on = [module.aws_load_balancer_controller]
+  depends_on = [null_resource.eks_ready]
   source     = "../../modules/metrics-server"
 }
 
 module "velero" {
-  depends_on = [module.efs_driver]
+  depends_on = [null_resource.eks_ready]
+  for_each   = var.install_velero ? local.this : []
   source     = "../../modules/velero-aws"
 
   cluster_name = local.cluster_name

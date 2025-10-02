@@ -48,7 +48,12 @@ variable "create_acm_certificate" {
   type    = bool
 }
 
-variable "create_s3_bucket" {
+variable "create_pluggable_storage_bucket" {
+  default = false
+  type    = bool
+}
+
+variable "create_workspace_caching_bucket" {
   default = false
   type    = bool
 }
@@ -69,6 +74,11 @@ variable "grafana_subdomain" {
 }
 
 variable "install_prometheus" {
+  default = false
+  type    = bool
+}
+
+variable "install_velero" {
   default = false
   type    = bool
 }

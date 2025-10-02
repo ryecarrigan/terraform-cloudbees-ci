@@ -6,7 +6,8 @@ locals {
 }
 
 module "service_account_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "5.60.0"
 
   attach_efs_csi_policy = true
   role_name_prefix      = local.role_name
@@ -39,8 +40,9 @@ resource "kubernetes_storage_class" "this" {
     name = var.storage_class_name
   }
 
-  storage_provisioner    = "efs.csi.aws.com"
-  volume_binding_mode    = "Immediate"
+  reclaim_policy      = "Delete"
+  storage_provisioner = "efs.csi.aws.com"
+  volume_binding_mode = "Immediate"
 
   parameters = {
     directoryPerms        = "700"

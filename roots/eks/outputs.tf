@@ -23,5 +23,5 @@ output "storage_class_name" {
 }
 
 output "velero_bucket" {
-  value = module.velero.bucket_name
+  value = var.install_velero ? module.velero["this"].bucket_name : ""
 }
