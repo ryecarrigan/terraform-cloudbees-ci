@@ -89,6 +89,7 @@ resource "aws_iam_role_policy_attachment" "this" {
   role       = aws_iam_role.this.name
 }
 
+# Attach policy to instance role if name is provided (for workspace caching)
 resource "aws_iam_role_policy_attachment" "instance" {
   count = length(var.instance_role_name) > 0 ? 1 : 0
 
@@ -96,6 +97,7 @@ resource "aws_iam_role_policy_attachment" "instance" {
   role       = var.instance_role_name
 }
 
+# Create pod identity association if ServiceAccount is provided (for pluggable storage)
 resource "aws_eks_pod_identity_association" "this" {
   count = length(var.service_account_name) > 0 ? 1 : 0
 
