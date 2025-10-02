@@ -15,7 +15,7 @@ module "vpc" {
   create_flow_log_cloudwatch_iam_role             = true
   create_flow_log_cloudwatch_log_group            = true
   enable_flow_log                                 = true
-  flow_log_cloudwatch_log_group_name_suffix       = true
+  flow_log_cloudwatch_log_group_name_suffix       = var.resource_prefix
   flow_log_cloudwatch_log_group_retention_in_days = 7
   vpc_flow_log_iam_policy_name                    = "${var.resource_prefix}_flow-logs"
   vpc_flow_log_iam_role_name                      = "${var.resource_prefix}_flow-logs"
