@@ -1,26 +1,32 @@
 SHELL := /usr/bin/env bash
 ACTION ?= plan
 
-.PHONY: all help eks eks-resources ci sda replication replication-timestamp post-eks post-sda up down in out fmt validate
+.PHONY: all help eks eks-core eks-resources ci cloudbees-ci replication replication-timestamp post-eks post-ci up down in out fmt validate
 
 help:
 	@echo "Usage: make <target> [ACTION=<action>]"
 	@echo ""
 	@echo "Workflow targets:"
-	@echo "  up                    Apply full stack (eks -> eks-resources -> post-eks -> sda -> post-sda)"
+	@echo "  up                    Apply full stack (eks -> post-eks -> cloudbees-ci -> post-ci)"
 	@echo "  down                  Destroy full stack in reverse order"
 	@echo "  in / out              Scale worker node groups to 0 or 1"
 	@echo "  fmt / validate        Format and validate all root modules"
 	@echo ""
 	@echo "Component targets (runs: terraform -chdir=roots/<dir> \$$(ACTION)):"
-	@echo "  eks                   roots/eks-core"
+	@echo "  eks                   roots/eks-core + roots/eks-resources"
+	@echo "  eks-core              roots/eks-core"
 	@echo "  eks-resources         roots/eks-resources"
-	@echo "  sda / ci              roots/sda"
+	@echo "  cloudbees-ci / ci     roots/cloudbees-ci"
 	@echo "  replication           roots/replication"
 	@echo "  replication-timestamp Query AWS EFS replication status"
 
 
 eks:
+	$(MAKE) eks-core
+	$(MAKE) eks-resources
+
+
+eks-core:
 	terraform -chdir=roots/eks-core $(ACTION)
 
 
@@ -28,8 +34,8 @@ eks-resources:
 	terraform -chdir=roots/eks-resources $(ACTION)
 
 
-ci sda:
-	terraform -chdir=roots/sda $(ACTION)
+cloudbees-ci ci:
+	terraform -chdir=roots/cloudbees-ci $(ACTION)
 
 
 replication:
@@ -55,22 +61,21 @@ post-eks:
 	fi
 
 
-post-sda:
-	kubectl config set-context --current --namespace=$$(terraform -chdir=roots/sda output -raw ci_namespace)
+post-ci:
+	kubectl config set-context --current --namespace=$$(terraform -chdir=roots/cloudbees-ci output -raw ci_namespace)
 
 
 up:
 	$(MAKE) eks ACTION="apply -auto-approve"
-	$(MAKE) eks-resources ACTION="apply -auto-approve"
 	$(MAKE) post-eks
-	$(MAKE) sda ACTION="apply -auto-approve"
-	$(MAKE) post-sda
+	$(MAKE) ci ACTION="apply -auto-approve"
+	$(MAKE) post-ci
 
 
 down:
-	$(MAKE) sda ACTION="destroy -auto-approve"
+	$(MAKE) ci ACTION="destroy -auto-approve"
 	$(MAKE) eks-resources ACTION="destroy -auto-approve"
-	$(MAKE) eks ACTION="destroy -auto-approve"
+	$(MAKE) eks-core ACTION="destroy -auto-approve"
 
 
 in:
@@ -94,8 +99,7 @@ fmt:
 validate:
 	@for dir in roots/*; do \
 		if [ -d "$$dir" ]; then \
-			echo "==> Validating $$dir"; \
+			echo "Validating $$dir"; \
 			terraform -chdir=$$dir validate || exit 1; \
 		fi; \
 	done
-

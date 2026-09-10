@@ -9,9 +9,9 @@
 *kubeconfig*
 admin-user-token.txt
 backend.tf
-roots/sda/values/*.xml
-roots/sda/values/*.yaml
-roots/sda/oc-casc-bundle
+roots/cloudbees-ci/values/*.xml
+roots/cloudbees-ci/values/*.yaml
+roots/cloudbees-ci/oc-casc-bundle
 roots/traditional-ec2/values/*.properties
 scripts
 tfplan
