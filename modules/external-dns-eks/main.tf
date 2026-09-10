@@ -8,7 +8,7 @@ locals {
   role_name   = substr(local.name_prefix, 0, 38)
 
   values = yamlencode({
-    sources   = ["ingress"]
+    sources   = ["gateway-httproute", "ingress"]
     extraArgs = ["--zone-id-filter=${data.aws_route53_zone.this.id}"]
 
     provider = {

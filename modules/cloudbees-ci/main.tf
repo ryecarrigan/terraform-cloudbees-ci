@@ -14,8 +14,10 @@ locals {
   config_map_name         = lookup(lookup(lookup(local.values_yaml, "OperationsCenter", {}), "CasC", {}), "ConfigMapName", "oc-casc-bundle")
   create_bundle           = length(var.bundle_data) != 0
   create_secret           = length(var.secret_data) != 0
+  lb_config_name          = "lbconfig-gateway"
   service_account_cjoc    = lookup(lookup(local.values_yaml, "rbac", {}), "serviceAccountName", "cjoc")
   service_account_jenkins = lookup(lookup(local.values_yaml, "rbac", {}), "masterServiceAccountName", "jenkins")
+  target_group_name       = "cloudbees-target-group"
 
   service_monitors = {
     cjoc = {
@@ -47,6 +49,9 @@ resource "kubernetes_namespace_v1" "this" {
 
   metadata {
     name = var.namespace
+    labels = {
+      "cloudbees.com/gateway-routes" = "enabled"
+    }
   }
 }
 
@@ -170,6 +175,145 @@ resource "kubernetes_manifest" "service_monitor" {
       }
 
       selector = each.value
+    }
+  }
+}
+
+resource "kubernetes_manifest" "target_group" {
+  for_each = var.create_gateway ? local.this : []
+
+  manifest = {
+    apiVersion = "gateway.k8s.aws/v1beta1"
+    kind       = "TargetGroupConfiguration"
+    metadata = {
+      name      = local.target_group_name
+      namespace = var.namespace
+    }
+
+    spec = {
+      defaultConfiguration = {
+        targetType = "ip"
+        targetGroupAttributes = [
+          { key : "stickiness.enabled", value : "true" },
+        ]
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "load_balancer_configuration" {
+  depends_on = [kubernetes_manifest.target_group]
+  for_each   = var.create_gateway ? local.this : []
+
+  manifest = {
+    apiVersion = "gateway.k8s.aws/v1beta1"
+    kind       = "LoadBalancerConfiguration"
+
+    metadata = {
+      name      = local.lb_config_name
+      namespace = var.namespace
+    }
+
+    spec = {
+      loadBalancerName = "cloudbees-ci-alb"
+      scheme           = "internet-facing"
+      tags             = var.tags
+      defaultTargetGroupConfiguration = {
+        name = local.target_group_name
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "gateway" {
+  depends_on = [kubernetes_manifest.load_balancer_configuration]
+  for_each   = var.create_gateway ? local.this : []
+
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1beta1",
+    kind       = "Gateway",
+    metadata = {
+      name      = var.gateway_name
+      namespace = var.namespace
+    },
+    spec = {
+      gatewayClassName = var.gateway_class_name
+      infrastructure = {
+        parametersRef = {
+          kind  = "LoadBalancerConfiguration"
+          name  = local.lb_config_name
+          group = "gateway.k8s.aws"
+        }
+      }
+
+      listeners = [
+        {
+          name     = "http",
+          protocol = "HTTP",
+          port     = 80,
+          allowedRoutes = {
+            namespaces = {
+              from = "Same"
+            }
+          }
+        },
+        {
+          name     = "https",
+          hostname = var.host_name,
+          protocol = "HTTPS",
+          port     = 443,
+          allowedRoutes = {
+            namespaces = {
+              selector = {
+                "matchLabels" = {
+                  "cloudbees.com/gateway-routes" = "enabled"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+
+  wait {
+    fields = {
+      "status.addresses[0].value" = "*"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "http_route" {
+  depends_on = [kubernetes_manifest.gateway]
+  for_each   = var.create_gateway ? local.this : []
+
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1",
+    kind       = "HTTPRoute",
+    metadata = {
+      name      = "https-redirect",
+      namespace = var.namespace
+    },
+    spec = {
+      parentRefs = [
+        {
+          name        = "cloudbees-ci",
+          sectionName = "http"
+        }
+      ],
+      rules = [
+        {
+          filters = [
+            {
+              type = "RequestRedirect",
+              requestRedirect = {
+                scheme     = "https",
+                statusCode = 301
+              }
+            }
+          ]
+        }
+      ]
     }
   }
 }

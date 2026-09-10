@@ -41,3 +41,18 @@ resource "helm_release" "this" {
   values     = [local.values]
   version    = var.chart_version
 }
+
+resource "kubernetes_manifest" "gateway_class" {
+  depends_on = [helm_release.this]
+
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1beta1"
+    kind       = "GatewayClass"
+    metadata = {
+      name = var.gateway_class_name
+    }
+    spec = {
+      controllerName = "gateway.k8s.aws/alb"
+    }
+  }
+}

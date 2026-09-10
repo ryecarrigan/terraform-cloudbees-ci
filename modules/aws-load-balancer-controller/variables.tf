@@ -1,9 +1,14 @@
 variable "chart_version" {
-  default = "3.3.0"
+  default = "3.4.0"
 }
 
 variable "cluster_name" {
   type = string
+}
+
+variable "gateway_class_name" {
+  default = "aws-alb"
+  type    = string
 }
 
 variable "oidc_arn" {
