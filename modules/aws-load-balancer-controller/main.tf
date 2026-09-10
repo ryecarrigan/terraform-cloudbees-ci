@@ -1,7 +1,7 @@
 locals {
   name_prefix = "${var.cluster_name}_${var.release_name}"
   namespace   = "kube-system"
-  role_name   = substr(local.name_prefix, 0, 38)
+  role_name   = substr(local.name_prefix, 0, 37)
 
   values = yamlencode({
     clusterName                = var.cluster_name
