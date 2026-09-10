@@ -1,5 +1,5 @@
 variable "chart_version" {
-  default = "7.1.3"
+  default = "12.1.0"
   type    = string
 }
 
