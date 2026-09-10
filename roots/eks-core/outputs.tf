@@ -10,18 +10,22 @@ output "cluster_name" {
   value = module.eks.cluster_name
 }
 
-output "efs_filesystem_id" {
-  value = module.efs_driver.file_system_id
-}
-
 output "nat_public_ip" {
   value = module.vpc.nat_public_ip
 }
 
-output "storage_class_name" {
-  value = module.efs_driver.storage_class_name
+output "node_security_group_id" {
+  value = module.eks.node_security_group_id
 }
 
-output "velero_bucket" {
-  value = var.install_velero ? module.velero["this"].bucket_name : ""
+output "oidc_provider_arn" {
+  value = module.eks.oidc_provider_arn
+}
+
+output "private_subnet_ids" {
+  value = module.vpc.private_subnet_ids
+}
+
+output "vpc_id" {
+  value = module.vpc.id
 }

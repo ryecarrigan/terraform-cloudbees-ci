@@ -2,7 +2,11 @@ ACTION ?= plan
 
 
 eks:
-	terraform -chdir=roots/eks $(ACTION)
+	terraform -chdir=roots/eks-core $(ACTION)
+
+
+eks-resources:
+	terraform -chdir=roots/eks-resources $(ACTION)
 
 
 ci sda:
@@ -18,9 +22,9 @@ replication-timestamp:
 
 
 post-eks:
-	aws eks update-kubeconfig --name `terraform -chdir=roots/eks output -raw cluster_name`
+	aws eks update-kubeconfig --name `terraform -chdir=roots/eks-core output -raw cluster_name`
 	for name in `kubectl get storageclass -o json | jq -r '.items[].metadata | select(.annotations."storageclass.kubernetes.io/is-default-class"=="true") | .name'`; do kubectl annotate --overwrite storageclass $$name storageclass.kubernetes.io/is-default-class=false; done
-	kubectl annotate --overwrite storageclass `terraform -chdir=roots/eks output -raw storage_class_name` storageclass.kubernetes.io/is-default-class=true
+	kubectl annotate --overwrite storageclass `terraform -chdir=roots/eks-resources output -raw storage_class_name` storageclass.kubernetes.io/is-default-class=true
 
 
 post-sda:
