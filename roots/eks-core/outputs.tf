@@ -6,6 +6,10 @@ output "bastion_eip" {
   value = var.bastion_enabled ? module.bastion["this"].bastion_eip : ""
 }
 
+output "cluster_arn" {
+  value = module.eks.cluster_arn
+}
+
 output "cluster_name" {
   value = module.eks.cluster_name
 }

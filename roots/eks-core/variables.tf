@@ -23,11 +23,6 @@ variable "bastion_enabled" {
   type    = bool
 }
 
-variable "ci_namespace" {
-  default = "cloudbees-ci"
-  type    = string
-}
-
 variable "cidr_block" {
   default = "10.0.0.0/16"
   type    = string
@@ -36,51 +31,6 @@ variable "cidr_block" {
     condition     = try(cidrhost(var.cidr_block, 0), null) != null
     error_message = "CIDR block was not in a valid CIDR format."
   }
-}
-
-variable "cluster_autoscaler_tag" {
-  default = "v1.34.2"
-  type    = string
-}
-
-variable "create_acm_certificate" {
-  default = true
-  type    = bool
-}
-
-variable "create_pluggable_storage_bucket" {
-  default = false
-  type    = bool
-}
-
-variable "create_workspace_caching_bucket" {
-  default = false
-  type    = bool
-}
-
-variable "efs_replication_protection" {
-  default = true
-  type    = bool
-}
-
-variable "ensure_unique_directory" {
-  default = true
-  type    = bool
-}
-
-variable "grafana_subdomain" {
-  default = "grafana"
-  type    = string
-}
-
-variable "install_prometheus" {
-  default = false
-  type    = bool
-}
-
-variable "install_velero" {
-  default = false
-  type    = bool
 }
 
 variable "instance_types" {
@@ -113,16 +63,6 @@ variable "node_group_min" {
   type    = number
 }
 
-variable "reuse_access_point" {
-  default = false
-  type    = bool
-}
-
-variable "single_node_group_per_az" {
-  default = true
-  type    = bool
-}
-
 variable "ssh_cidr_blocks" {
   type = list(string)
 
@@ -130,11 +70,6 @@ variable "ssh_cidr_blocks" {
     condition     = contains([for block in var.ssh_cidr_blocks : try(cidrhost(block, 0), "")], "") == false
     error_message = "List of SSH CIDR blocks contains an invalid CIDR block."
   }
-}
-
-variable "storage_class_uid" {
-  default = "1000"
-  type    = string
 }
 
 variable "tags" {

@@ -1,4 +1,23 @@
+SHELL := /usr/bin/env bash
 ACTION ?= plan
+
+.PHONY: all help eks eks-resources ci sda replication replication-timestamp post-eks post-sda up down in out fmt validate
+
+help:
+	@echo "Usage: make <target> [ACTION=<action>]"
+	@echo ""
+	@echo "Workflow targets:"
+	@echo "  up                    Apply full stack (eks -> eks-resources -> post-eks -> sda -> post-sda)"
+	@echo "  down                  Destroy full stack in reverse order"
+	@echo "  in / out              Scale worker node groups to 0 or 1"
+	@echo "  fmt / validate        Format and validate all root modules"
+	@echo ""
+	@echo "Component targets (runs: terraform -chdir=roots/<dir> \$$(ACTION)):"
+	@echo "  eks                   roots/eks-core"
+	@echo "  eks-resources         roots/eks-resources"
+	@echo "  sda / ci              roots/sda"
+	@echo "  replication           roots/replication"
+	@echo "  replication-timestamp Query AWS EFS replication status"
 
 
 eks:
@@ -18,34 +37,65 @@ replication:
 
 
 replication-timestamp:
-	aws efs describe-replication-configurations --file-system-id `terraform -chdir=roots/replication output -raw primary_file_system`| jq -r ".Replications[].Destinations[] | select(.FileSystemId==\"`terraform -chdir=roots/replication output -raw secondary_file_system`\") | .LastReplicatedTimestamp"
+	@PRIMARY=$$(terraform -chdir=roots/replication output -raw primary_file_system); \
+	SECONDARY=$$(terraform -chdir=roots/replication output -raw secondary_file_system); \
+	aws efs describe-replication-configurations --file-system-id "$$PRIMARY" | \
+		jq -r --arg sec "$$SECONDARY" '.Replications[].Destinations[] | select(.FileSystemId == $$sec) | .LastReplicatedTimestamp'
 
 
 post-eks:
-	aws eks update-kubeconfig --name `terraform -chdir=roots/eks-core output -raw cluster_name`
-	for name in `kubectl get storageclass -o json | jq -r '.items[].metadata | select(.annotations."storageclass.kubernetes.io/is-default-class"=="true") | .name'`; do kubectl annotate --overwrite storageclass $$name storageclass.kubernetes.io/is-default-class=false; done
-	kubectl annotate --overwrite storageclass `terraform -chdir=roots/eks-resources output -raw storage_class_name` storageclass.kubernetes.io/is-default-class=true
+	aws eks update-kubeconfig --name $$(terraform -chdir=roots/eks-core output -raw cluster_name)
+	@CONTEXT=$$(terraform -chdir=roots/eks-core output -raw cluster_arn); \
+	for name in $$(kubectl get storageclass --context "$$CONTEXT" -o json | jq -r '.items[].metadata | select(.annotations."storageclass.kubernetes.io/is-default-class"=="true") | .name'); do \
+		kubectl annotate --context "$$CONTEXT" --overwrite storageclass "$$name" storageclass.kubernetes.io/is-default-class=false; \
+	done; \
+	SC_NAME=$$(terraform -chdir=roots/eks-resources output -raw storage_class_name); \
+	if [ -n "$$SC_NAME" ]; then \
+		kubectl annotate --context "$$CONTEXT" --overwrite storageclass "$$SC_NAME" storageclass.kubernetes.io/is-default-class=true; \
+	fi
 
 
 post-sda:
-	kubectl config set-context --current --namespace=`terraform -chdir=roots/sda output -raw ci_namespace`
+	kubectl config set-context --current --namespace=$$(terraform -chdir=roots/sda output -raw ci_namespace)
 
 
 up:
-	make eks ACTION="apply -auto-approve"
-	make post-eks
-	make sda ACTION="apply -auto-approve"
-	make post-sda
+	$(MAKE) eks ACTION="apply -auto-approve"
+	$(MAKE) eks-resources ACTION="apply -auto-approve"
+	$(MAKE) post-eks
+	$(MAKE) sda ACTION="apply -auto-approve"
+	$(MAKE) post-sda
 
 
 down:
-	make sda ACTION="destroy -auto-approve"
-	make eks ACTION="destroy -auto-approve"
+	$(MAKE) sda ACTION="destroy -auto-approve"
+	$(MAKE) eks-resources ACTION="destroy -auto-approve"
+	$(MAKE) eks ACTION="destroy -auto-approve"
 
 
 in:
-	for name in `terraform -chdir=roots/eks output -json autoscaling_group_names | jq -r '. | flatten[]'`; do aws autoscaling update-auto-scaling-group --auto-scaling-group-name $$name --min-size 0 --desired-capacity 0; echo "Scaled in: $$name"; done
+	@for name in $$(terraform -chdir=roots/eks-core output -json autoscaling_group_names | jq -r '. | flatten[]'); do \
+		aws autoscaling update-auto-scaling-group --auto-scaling-group-name "$$name" --min-size 0 --desired-capacity 0; \
+		echo "Scaled in: $$name"; \
+	done
 
 
 out:
-	for name in `terraform -chdir=roots/eks output -json autoscaling_group_names | jq -r '. | flatten[]'`; do aws autoscaling update-auto-scaling-group --auto-scaling-group-name $$name --min-size 0 --desired-capacity 1; echo "Scaled out: $$name"; done
+	@for name in $$(terraform -chdir=roots/eks-core output -json autoscaling_group_names | jq -r '. | flatten[]'); do \
+		aws autoscaling update-auto-scaling-group --auto-scaling-group-name "$$name" --min-size 0 --desired-capacity 1; \
+		echo "Scaled out: $$name"; \
+	done
+
+
+fmt:
+	terraform fmt -recursive
+
+
+validate:
+	@for dir in roots/*; do \
+		if [ -d "$$dir" ]; then \
+			echo "==> Validating $$dir"; \
+			terraform -chdir=$$dir validate || exit 1; \
+		fi; \
+	done
+

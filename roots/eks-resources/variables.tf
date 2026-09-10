@@ -117,6 +117,11 @@ variable "ssh_cidr_blocks" {
   }
 }
 
+variable "storage_class_gid" {
+  default = "1000"
+  type    = string
+}
+
 variable "storage_class_uid" {
   default = "1000"
   type    = string
@@ -125,11 +130,6 @@ variable "storage_class_uid" {
 variable "tags" {
   default = {}
   type    = map(string)
-}
-
-variable "use_spot_instances" {
-  default = false
-  type    = bool
 }
 
 variable "zone_count" {

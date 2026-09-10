@@ -29,7 +29,8 @@ data "aws_route53_zone" "domain" {
 }
 
 data "terraform_remote_state" "eks" {
-  backend = "s3"
+  backend   = "s3"
+  workspace = terraform.workspace
   config = {
     bucket       = var.backend_bucket
     key          = "terraform-cloudbees-ci/eks-core/terraform.tfstate"
@@ -144,6 +145,8 @@ module "efs_driver" {
   node_security_group_id  = local.node_security_group_id
   oidc_arn                = local.oidc_provider_arn
   private_subnet_ids      = local.private_subnet_ids
+  storage_class_gid       = var.storage_class_gid
+  storage_class_uid       = var.storage_class_uid
   sub_path_pattern        = "$${.PVC.name}"
   vpc_id                  = local.vpc_id
 }
